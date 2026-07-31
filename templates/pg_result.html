@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>PG Student Record</title>
+
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='pg_style.css') }}">
+
+
+<style>
+
+table.info,
+table.exam-table{
+
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+
+}
+
+
+table.info td,
+table.exam-table td,
+table.exam-table th{
+
+    border:1px solid black;
+    padding:4px;
+
+}
+
+
+
+input,
+textarea{
+
+    width:100%;
+    border:none;
+    background:transparent;
+    font-size:14px;
+
+}
+
+
+
+input[readonly],
+textarea[readonly]{
+
+    cursor:default;
+
+}
+
+
+
+input:not([readonly]),
+textarea:not([readonly]){
+
+    border:1px solid #aaa;
+    background:white;
+
+}
+
+
+
+.exam-table input{
+
+    text-align:center;
+
+}
+
+
+
+.no-print button{
+
+    padding:8px 15px;
+    margin:5px;
+    cursor:pointer;
+
+}
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+
+<!-- ================= MAIN SAVE FORM ================= -->
+
+
+<form action="{{ url_for('save_pg') }}"
+method="POST"
+id="studentForm">
+
+
+<input type="hidden"
+name="course"
+value="{{course}}">
+
+
+<input type="hidden"
+name="batch"
+value="{{batch}}">
+
+
+<input type="hidden"
+name="RegNo"
+value="{{student.RegNo}}">
+
+
+
+
+
+<!-- ================= HEADER ================= -->
+
+
+<div class="header">
+
+
+<img class="logo"
+src="{{ url_for('static', filename='hhlogo.jpg') }}">
+
+
+
+<div class="title">
+
+
+<h2>
+H.H. THE RAJAH'S COLLEGE (AUTONOMOUS)
+</h2>
+
+
+<h3>
+PUDUKKOTTAI - 622001
+</h3>
+
+
+<h2>
+<i>
+PG & Research Department of Computer Science
+</i>
+</h2>
+
+
+</div>
+
+
+
+
+<img class="photo"
+src="{{ url_for('static', filename='photos/' + student.Photo) }}">
+
+
+
+</div>
+
+
+<hr>
+
+
+
+
+
+<h3>
+
+
+COURSE :
+
+<input readonly
+type="text"
+name="Course"
+value="{{student.Course}}"
+style="width:200px;">
+
+
+
+Batch :
+
+<input readonly
+type="text"
+name="Batch"
+value="{{student.Batch}}"
+style="width:100px;">
+
+
+
+</h3>
+
+
+
+
+
+
+<!-- ================= STUDENT DETAILS ================= -->
+
+
+<table class="info">
+
+
+<tr>
+
+<td>
+<b>Name</b>
+</td>
+
+
+<td colspan="5">
+
+<input readonly
+name="Name"
+value="{{student.Name}}">
+
+</td>
+
+</tr>
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Reg.No</b>
+</td>
+
+
+<td>
+
+<input readonly
+value="{{student.RegNo}}">
+
+</td>
+
+
+
+<td>
+<b>DOB</b>
+</td>
+
+
+<td>
+
+<input readonly
+type="date"
+name="DOB"
+value="{{student.DOB}}">
+
+</td>
+
+
+
+<td>
+<b>Community</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="Community"
+value="{{student.Community}}">
+
+</td>
+
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Father Name</b>
+</td>
+
+
+<td colspan="2">
+
+<input readonly
+name="ParentName"
+value="{{student.ParentName}}">
+
+</td>
+
+
+
+<td>
+<b>Mother Name</b>
+</td>
+
+
+<td colspan="2">
+
+<input readonly
+name="MotherName"
+value="{{student.MotherName}}">
+
+</td>
+
+
+
+</tr>
+
+
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Father Occupation</b>
+</td>
+
+
+<td colspan="2">
+
+<input readonly
+name="faOccupation"
+value="{{student.faOccupation}}">
+
+</td>
+
+
+
+
+<td>
+<b>Mother Occupation</b>
+</td>
+
+
+<td colspan="2">
+
+<input readonly
+name="moOccupation"
+value="{{student.moOccupation}}">
+
+</td>
+
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Address</b>
+</td>
+
+
+<td colspan="5">
+
+
+<textarea readonly
+name="Address"
+rows="3">{{student.Address}}</textarea>
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Pincode</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="Pincode"
+value="{{student.Pincode}}">
+
+</td>
+
+
+
+<td>
+<b>Mobile</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="Mobile"
+value="{{student.Mobile}}">
+
+</td>
+
+
+
+
+<td>
+<b>First Graduate</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="FirstGraduate"
+value="{{student.FirstGraduate}}">
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Bank Name</b>
+</td>
+
+
+<td colspan="5">
+
+
+<input readonly
+name="BankName"
+value="{{student.BankName}}">
+
+
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Branch</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="Branch"
+value="{{student.Branch}}">
+
+</td>
+
+
+
+
+<td>
+<b>A/C No</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="BankAccount"
+value="{{student.BankAccount}}">
+
+</td>
+
+
+
+
+<td>
+<b>IFSC</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="IFSC"
+value="{{student.IFSC}}">
+
+</td>
+
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+<b>Aadhar</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="Aadhar"
+value="{{student.Aadhar}}">
+
+</td>
+
+
+
+<td>
+<b>Blood Group</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="BloodGroup"
+value="{{student.BloodGroup}}">
+
+</td>
+
+
+
+<td>
+<b>UMIS ID</b>
+</td>
+
+
+<td>
+
+<input readonly
+name="UmisID"
+value="{{student.UmisID}}">
+
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+<td>
+<b>Email</b>
+</td>
+
+
+<td colspan="5">
+
+<input readonly
+name="Email"
+value="{{student.Email}}">
+
+</td>
+
+
+</tr>
+
+
+</table>
+<!-- ================= EXAMINATION RECORD ================= -->
+
+<br>
+
+<h3>
+<b>Examination Record :</b>
+</h3>
+
+
+<table class="exam-table">
+
+
+<tr>
+
+<th colspan="5">
+First Semester<br>
+November 2025
+</th>
+
+
+<th colspan="5">
+Second Semester<br>
+April 2026
+</th>
+
+
+<th colspan="5">
+Third Semester<br>
+November 2026
+</th>
+
+
+</tr>
+
+
+
+<tr>
+
+<th>
+Sub Code
+</th>
+
+<th>
+I.E
+</th>
+
+<th>
+W.E
+</th>
+
+<th>
+TOT
+</th>
+
+<th>
+Month & Year
+</th>
+
+
+
+<th>
+Sub Code
+</th>
+
+<th>
+I.E
+</th>
+
+<th>
+W.E
+</th>
+
+<th>
+TOT
+</th>
+
+<th>
+Month & Year
+</th>
+
+
+
+<th>
+Sub Code
+</th>
+
+<th>
+I.E
+</th>
+
+<th>
+W.E
+</th>
+
+<th>
+TOT
+</th>
+
+<th>
+Month & Year
+</th>
+
+
+</tr>
+
+
+
+
+
+<!-- ROW 1 -->
+
+<tr>
+
+
+<td>
+26PCS1
+</td>
+
+<td>
+<input readonly name="26PCS1_IE"
+value="{{student['26PCS1_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS1_WE"
+value="{{student['26PCS1_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS1_TOT"
+value="{{student['26PCS1_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS1_MY"
+value="{{student['26PCS1_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCS4
+</td>
+
+
+<td>
+<input readonly name="26PCS4_IE"
+value="{{student['26PCS4_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS4_WE"
+value="{{student['26PCS4_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS4_TOT"
+value="{{student['26PCS4_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS4_MY"
+value="{{student['26PCS4_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCS7
+</td>
+
+
+<td>
+<input readonly name="26PCS7_IE"
+value="{{student['26PCS7_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS7_WE"
+value="{{student['26PCS7_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS7_TOT"
+value="{{student['26PCS7_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS7_MY"
+value="{{student['26PCS7_MY']}}">
+</td>
+
+
+</tr>
+
+
+
+
+
+
+
+<!-- ROW 2 -->
+
+
+<tr>
+
+
+<td>
+26PCS2
+</td>
+
+
+<td>
+<input readonly name="26PCS2_IE"
+value="{{student['26PCS2_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS2_WE"
+value="{{student['26PCS2_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS2_TOT"
+value="{{student['26PCS2_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS2_MY"
+value="{{student['26PCS2_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCS5
+</td>
+
+
+<td>
+<input readonly name="26PCS5_IE"
+value="{{student['26PCS5_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS5_WE"
+value="{{student['26PCS5_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS5_TOT"
+value="{{student['26PCS5_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS5_MY"
+value="{{student['26PCS5_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCS8
+</td>
+
+
+<td>
+<input readonly name="26PCS8_IE"
+value="{{student['26PCS8_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS8_WE"
+value="{{student['26PCS8_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS8_TOT"
+value="{{student['26PCS8_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS8_MY"
+value="{{student['26PCS8_MY']}}">
+</td>
+
+
+</tr>
+
+
+
+
+
+
+
+<!-- ROW 3 -->
+
+
+<tr>
+
+
+<td>
+26PCS3P
+</td>
+
+
+<td>
+<input readonly name="26PCS3P_IE"
+value="{{student['26PCS3P_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS3P_WE"
+value="{{student['26PCS3P_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS3P_TOT"
+value="{{student['26PCS3P_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS3P_MY"
+value="{{student['26PCS3P_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCS6P
+</td>
+
+
+<td>
+<input readonly name="26PCS6P_IE"
+value="{{student['26PCS6P_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS6P_WE"
+value="{{student['26PCS6P_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS6P_TOT"
+value="{{student['26PCS6P_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS6P_MY"
+value="{{student['26PCS6P_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCS9P
+</td>
+
+
+<td>
+<input readonly name="26PCS9P_IE"
+value="{{student['26PCS9P_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS9P_WE"
+value="{{student['26PCS9P_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS9P_TOT"
+value="{{student['26PCS9P_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCS9P_MY"
+value="{{student['26PCS9P_MY']}}">
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<!-- ROW 4 -->
+
+
+<tr>
+
+
+<td>
+26PCSDGE1A
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE1A_IE"
+value="{{student['26PCSDGE1A_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE1A_WE"
+value="{{student['26PCSDGE1A_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE1A_TOT"
+value="{{student['26PCSDGE1A_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE1A_MY"
+value="{{student['26PCSDGE1A_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCSDGE2A
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE2A_IE"
+value="{{student['26PCSDGE2A_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE2A_WE"
+value="{{student['26PCSDGE2A_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE2A_TOT"
+value="{{student['26PCSDGE2A_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE2A_MY"
+value="{{student['26PCSDGE2A_MY']}}">
+</td>
+
+
+
+
+
+<td>
+26PCSDGE3A
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE3A_IE"
+value="{{student['26PCSDGE3A_IE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE3A_WE"
+value="{{student['26PCSDGE3A_WE']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE3A_TOT"
+value="{{student['26PCSDGE3A_TOT']}}">
+</td>
+
+
+<td>
+<input readonly name="26PCSDGE3A_MY"
+value="{{student['26PCSDGE3A_MY']}}">
+</td>
+
+
+</tr>
+<!-- ================= ATTENDANCE + SIGNATURE ================= -->
+
+</table>
+
+
+<br>
+
+
+<table class="exam-table">
+
+
+<tr>
+
+<th colspan="5">
+Fourth Semester<br>
+April 2027
+</th>
+
+
+<th colspan="5">
+Attendance Percentage
+</th>
+
+
+<th colspan="5">
+Marksheet Issue
+</th>
+
+
+</tr>
+
+
+
+<tr>
+
+<th>
+Sub Code
+</th>
+
+<th>
+I.E
+</th>
+
+<th>
+W.E
+</th>
+
+<th>
+TOT
+</th>
+
+<th>
+Month & Year
+</th>
+
+
+<th>
+Sem
+</th>
+
+<th colspan="4">
+Percentage
+</th>
+
+
+<th>
+Sem
+</th>
+
+<th colspan="4">
+Signature
+</th>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+
+<td>
+26PCS10
+</td>
+
+
+<td>
+<input readonly
+name="26PCS10_IE"
+value="{{student['26PCS10_IE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCS10_WE"
+value="{{student['26PCS10_WE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCS10_TOT"
+value="{{student['26PCS10_TOT']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCS10_MY"
+value="{{student['26PCS10_MY']}}">
+</td>
+
+
+
+<td>
+I
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Attendance_I"
+value="{{student.Attendance_I}}">
+
+</td>
+
+
+<td>
+I
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Signature_I"
+value="{{student.Signature_I}}">
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+26PCS11
+</td>
+
+
+<td>
+<input readonly
+name="26PCS11_IE"
+value="{{student['26PCS11_IE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCS11_WE"
+value="{{student['26PCS11_WE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCS11_TOT"
+value="{{student['26PCS11_TOT']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCS11_MY"
+value="{{student['26PCS11_MY']}}">
+</td>
+
+
+<td>
+II
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Attendance_II"
+value="{{student.Attendance_II}}">
+
+</td>
+
+
+<td>
+II
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Signature_II"
+value="{{student.Signature_II}}">
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+26PCSDGE4A
+</td>
+
+
+<td>
+<input readonly
+name="26PCSDGE4A_IE"
+value="{{student['26PCSDGE4A_IE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCSDGE4A_WE"
+value="{{student['26PCSDGE4A_WE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCSDGE4A_TOT"
+value="{{student['26PCSDGE4A_TOT']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCSDGE4A_MY"
+value="{{student['26PCSDGE4A_MY']}}">
+</td>
+
+
+<td>
+III
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Attendance_III"
+value="{{student.Attendance_III}}">
+
+</td>
+
+
+
+<td>
+III
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Signature_III"
+value="{{student.Signature_III}}">
+
+</td>
+
+
+</tr>
+
+
+
+
+
+
+<tr>
+
+
+<td>
+26PCSEB1
+</td>
+
+
+<td>
+<input readonly
+name="26PCSEB1_IE"
+value="{{student['26PCSEB1_IE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCSEB1_WE"
+value="{{student['26PCSEB1_WE']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCSEB1_TOT"
+value="{{student['26PCSEB1_TOT']}}">
+</td>
+
+
+<td>
+<input readonly
+name="26PCSEB1_MY"
+value="{{student['26PCSEB1_MY']}}">
+</td>
+
+
+<td>
+IV
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Attendance_IV"
+value="{{student.Attendance_IV}}">
+
+</td>
+
+
+<td>
+IV
+</td>
+
+
+<td colspan="4">
+
+<input readonly
+name="Signature_IV"
+value="{{student.Signature_IV}}">
+
+</td>
+
+
+</tr>
+
+
+
+
+
+<tr>
+
+
+<td colspan="5"></td>
+
+
+<th colspan="4">
+Overall %
+</th>
+
+
+<td colspan="3">
+
+<input readonly
+name="Overall_Percentage"
+value="{{student.Overall_Percentage}}">
+
+</td>
+
+
+<td colspan="3">
+
+<input readonly
+name="Overall_Grade"
+value="{{student.Overall_Grade}}">
+
+</td>
+
+
+</tr>
+
+
+</table>
+
+
+
+
+
+<br><br>
+
+
+
+<!-- ================= SIGNATURE ================= -->
+
+
+<table style="width:100%;border:none;">
+
+
+<tr>
+
+
+<td style="border:none;width:50%;text-align:left;">
+
+
+__________________________
+
+<br><br>
+
+<b>
+Head of the Department
+</b>
+
+
+</td>
+
+
+
+
+
+<td style="border:none;text-align:right;">
+
+
+<input readonly
+name="Incharge"
+value="{{student.Incharge}}"
+style="border:none;text-align:center;font-weight:bold;">
+
+
+<br>
+
+__________________________
+
+<br>
+
+Signature of the Incharge
+
+
+</td>
+
+
+</tr>
+
+
+</table>
+
+
+
+
+
+
+
+<br><br>
+
+
+
+{% if message %}
+
+<div class="success">
+
+{{message}}
+
+</div>
+
+{% endif %}
+
+
+
+
+
+<!-- ================= BUTTONS ================= -->
+
+
+<div class="no-print">
+
+
+<button
+type="button"
+id="changeBtn"
+onclick="enableEdit()">
+
+✏️ Change
+
+</button>
+
+
+
+<button
+type="submit"
+id="saveBtn"
+style="display:none;">
+
+💾 Save Changes
+
+</button>
+
+
+
+<button
+type="button"
+onclick="printPage()">
+
+🖨 Print
+
+</button>
+
+
+
+<a href="{{url_for('home')}}">
+
+<button type="button">
+
+← Back Home
+
+</button>
+
+</a>
+
+
+</div>
+
+
+
+
+</form>
+
+
+
+
+
+<!-- ================= DELETE FORM ================= -->
+
+
+<form action="{{url_for('delete_student')}}"
+method="POST"
+class="no-print"
+onsubmit="return confirm('Delete this student?')">
+
+
+<input type="hidden"
+name="course"
+value="{{course}}">
+
+
+<input type="hidden"
+name="batch"
+value="{{batch}}">
+
+
+<input type="hidden"
+name="RegNo"
+value="{{student.RegNo}}">
+
+
+
+<button
+style="background:red;color:white;">
+
+🗑 Delete Student
+
+</button>
+
+
+</form>
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+<script>
+
+
+function printPage(){
+
+window.print();
+
+}
+
+
+
+
+window.onload=function(){
+
+
+document.querySelectorAll(
+"#studentForm input,#studentForm textarea"
+)
+.forEach(function(e){
+
+
+if(e.type!="hidden"){
+
+e.readOnly=true;
+
+e.style.pointerEvents="none";
+
+}
+
+
+});
+
+
+}
+
+
+
+
+
+function enableEdit(){
+
+
+
+document.querySelectorAll(
+"#studentForm input,#studentForm textarea"
+)
+.forEach(function(e){
+
+
+if(e.type!="hidden"){
+
+
+e.readOnly=false;
+
+e.style.pointerEvents="auto";
+
+
+}
+
+
+});
+
+
+
+document.getElementById(
+"changeBtn"
+).style.display="none";
+
+
+
+document.getElementById(
+"saveBtn"
+).style.display="inline-block";
+
+
+
+}
+
+
+
+</script>
+
+
+
+</body>
+
+</html>

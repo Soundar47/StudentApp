@@ -1,0 +1,1027 @@
+/* ==========================================
+   RESET
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI",Arial,sans-serif;
+}
+
+
+
+/* ==========================================
+   BODY
+========================================== */
+
+body{
+
+    background:
+    linear-gradient(
+        135deg,
+        #eef2ff,
+        #f8fafc
+    );
+
+    min-height:100vh;
+
+    color:#1e293b;
+
+}
+
+
+
+
+/* ==========================================
+   WRAPPER
+========================================== */
+
+
+.wrapper{
+
+    width:95%;
+
+    max-width:1400px;
+
+    margin:auto;
+
+}
+
+
+
+/* ==========================================
+   HEADER
+========================================== */
+
+
+header{
+
+    margin-top:25px;
+
+    background:white;
+
+    padding:25px 35px;
+
+    border-radius:20px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    box-shadow:
+    0 10px 30px rgba(0,0,0,0.08);
+
+}
+
+
+
+
+.logo h1{
+
+    font-size:30px;
+
+    color:#1d4ed8;
+
+}
+
+
+
+.logo p{
+
+    margin-top:5px;
+
+    color:#64748b;
+
+    font-size:16px;
+
+}
+
+
+
+
+
+.header-buttons{
+
+    display:flex;
+
+    gap:15px;
+
+}
+
+
+
+
+button{
+
+    border:none;
+
+    padding:12px 22px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.3s;
+
+}
+
+
+
+button:hover{
+
+    transform:translateY(-2px);
+
+}
+
+
+
+
+.home-btn{
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+
+
+.logout-btn{
+
+    background:#dc2626;
+
+    color:white;
+
+}
+
+
+
+
+
+/* ==========================================
+   CARDS
+========================================== */
+
+
+.cards{
+
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(
+    4,
+    1fr
+    );
+
+
+    gap:25px;
+
+
+    margin-top:30px;
+
+
+}
+
+
+
+
+.card{
+
+
+    background:white;
+
+    padding:30px 20px;
+
+    border-radius:20px;
+
+    text-align:center;
+
+    box-shadow:
+
+    0 8px 25px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+
+}
+
+
+
+.card:hover{
+
+
+    transform:
+
+    translateY(-8px);
+
+
+    box-shadow:
+
+    0 15px 35px rgba(0,0,0,.15);
+
+
+}
+
+
+
+
+.card h2{
+
+    font-size:40px;
+
+}
+
+
+
+.card h3{
+
+    margin:15px 0;
+
+    color:#1e40af;
+
+}
+
+
+
+.card p{
+
+    color:#64748b;
+
+    min-height:45px;
+
+}
+
+
+
+
+
+.card button{
+
+    margin-top:15px;
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+
+
+
+
+/* ==========================================
+   ALERT
+========================================== */
+
+
+.alert{
+
+    margin-top:25px;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    text-align:center;
+
+    font-weight:600;
+
+}
+
+
+
+.success{
+
+    background:#dcfce7;
+
+    color:#166534;
+
+}
+
+
+
+.error{
+
+    background:#fee2e2;
+
+    color:#991b1b;
+
+}
+
+
+
+
+
+
+/* ==========================================
+   SECTION FORMS
+========================================== */
+
+
+.section{
+
+    margin-top:35px;
+
+    background:white;
+
+    padding:35px;
+
+    border-radius:20px;
+
+    box-shadow:
+
+    0 10px 30px rgba(0,0,0,.1);
+
+}
+
+
+
+.section h2{
+
+    margin-bottom:25px;
+
+    color:#1e40af;
+
+}
+
+
+
+
+.section form{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:15px;
+
+}
+
+
+
+
+
+label{
+
+    font-weight:600;
+
+    color:#334155;
+
+}
+
+
+
+
+
+input,
+select{
+
+
+    padding:13px;
+
+    border:1px solid #cbd5e1;
+
+    border-radius:10px;
+
+    font-size:15px;
+
+    outline:none;
+
+
+}
+
+
+
+input:focus,
+select:focus{
+
+
+    border-color:#2563eb;
+
+
+    box-shadow:
+
+    0 0 5px rgba(37,99,235,.3);
+
+}
+
+
+
+
+.section button{
+
+
+    background:#2563eb;
+
+    color:white;
+
+    width:max-content;
+
+}
+
+
+
+
+.close-btn{
+
+    background:#64748b !important;
+
+}
+
+
+
+
+
+.delete-button{
+
+
+    background:#dc2626 !important;
+
+}
+
+
+
+
+
+.info{
+
+
+    background:#eff6ff;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    color:#1d4ed8;
+
+}
+
+
+
+
+
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+
+footer{
+
+
+    margin-top:50px;
+
+    text-align:center;
+
+    padding:25px;
+
+    color:#64748b;
+
+
+}
+
+
+
+footer hr{
+
+
+    margin-bottom:20px;
+
+    border:none;
+
+    border-top:1px solid #cbd5e1;
+
+
+}
+
+
+
+
+
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+
+@media(max-width:1100px){
+
+
+.cards{
+
+grid-template-columns:
+repeat(2,1fr);
+
+}
+
+
+}
+
+
+
+@media(max-width:650px){
+
+
+header{
+
+flex-direction:column;
+
+gap:20px;
+
+text-align:center;
+
+}
+
+
+
+.cards{
+
+grid-template-columns:
+1fr;
+
+}
+
+
+
+.logo h1{
+
+font-size:22px;
+
+}
+
+
+}
+/* ==========================================
+   ADMIN DASHBOARD FINAL POLISH
+========================================== */
+
+
+/* ==========================================
+   CARD COLOR VARIANTS
+========================================== */
+
+
+.card.blue h2{
+
+    color:#2563eb;
+
+}
+
+
+.card.green h2{
+
+    color:#16a34a;
+
+}
+
+
+.card.orange h2{
+
+    color:#ea580c;
+
+}
+
+
+.card.red h2{
+
+    color:#dc2626;
+
+}
+
+
+.card.purple h2{
+
+    color:#9333ea;
+
+}
+
+
+
+
+.card-icon{
+
+    font-size:45px;
+
+    margin-bottom:15px;
+
+}
+
+
+
+
+/* ==========================================
+   TABLE DESIGN
+========================================== */
+
+
+.table-container{
+
+    width:100%;
+
+    overflow-x:auto;
+
+    margin-top:20px;
+
+}
+
+
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:white;
+
+    border-radius:15px;
+
+    overflow:hidden;
+
+}
+
+
+
+th{
+
+    background:#2563eb;
+
+    color:white;
+
+    padding:14px;
+
+    text-align:center;
+
+}
+
+
+
+td{
+
+    padding:12px;
+
+    border-bottom:1px solid #e2e8f0;
+
+    text-align:center;
+
+}
+
+
+
+tr:hover{
+
+    background:#eff6ff;
+
+}
+
+
+
+
+/* ==========================================
+   ACTION BUTTONS
+========================================== */
+
+
+.edit-btn{
+
+    background:#16a34a;
+
+    color:white;
+
+}
+
+
+
+.view-btn{
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+
+
+.delete-btn{
+
+    background:#dc2626;
+
+    color:white;
+
+}
+
+
+
+.edit-btn:hover,
+.view-btn:hover,
+.delete-btn:hover{
+
+    opacity:.85;
+
+}
+
+
+
+/* ==========================================
+   UPLOAD BOX
+========================================== */
+
+
+.upload-box{
+
+    border:2px dashed #2563eb;
+
+    padding:35px;
+
+    text-align:center;
+
+    border-radius:15px;
+
+    background:#eff6ff;
+
+}
+
+
+
+.upload-box input{
+
+    margin-top:15px;
+
+}
+
+
+
+/* ==========================================
+   SEARCH AREA
+========================================== */
+
+
+.search-area{
+
+    display:flex;
+
+    gap:15px;
+
+    flex-wrap:wrap;
+
+}
+
+
+
+.search-area input,
+.search-area select{
+
+    flex:1;
+
+    min-width:200px;
+
+}
+
+
+
+
+/* ==========================================
+   PROFILE IMAGE
+========================================== */
+
+
+.student-photo{
+
+    width:70px;
+
+    height:70px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+
+    border:3px solid #2563eb;
+
+}
+
+
+
+/* ==========================================
+   EMPTY DATA
+========================================== */
+
+
+.empty{
+
+    text-align:center;
+
+    padding:40px;
+
+    color:#64748b;
+
+}
+
+
+
+.empty h3{
+
+    color:#334155;
+
+    margin-bottom:10px;
+
+}
+
+
+
+/* ==========================================
+   LOADING
+========================================== */
+
+
+.loading{
+
+    width:45px;
+
+    height:45px;
+
+    border-radius:50%;
+
+    border:5px solid #ddd;
+
+    border-top-color:#2563eb;
+
+    animation:rotate 1s linear infinite;
+
+    margin:auto;
+
+}
+
+
+
+@keyframes rotate{
+
+    from{
+
+        transform:rotate(0deg);
+
+    }
+
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+
+
+
+
+/* ==========================================
+   RESPONSIVE IMPROVEMENT
+========================================== */
+
+
+@media(max-width:900px){
+
+
+.wrapper{
+
+    width:92%;
+
+}
+
+
+header{
+
+    padding:20px;
+
+}
+
+
+.section{
+
+    padding:25px;
+
+}
+
+
+.header-buttons{
+
+    width:100%;
+
+    justify-content:center;
+
+}
+
+
+button{
+
+    padding:11px 18px;
+
+}
+
+
+}
+
+
+
+@media(max-width:450px){
+
+
+.wrapper{
+
+    width:95%;
+
+}
+
+
+.logo h1{
+
+    font-size:20px;
+
+}
+
+
+.logo p{
+
+    font-size:13px;
+
+}
+
+
+.header-buttons{
+
+    flex-direction:column;
+
+    width:100%;
+
+}
+
+
+.header-buttons button{
+
+    width:100%;
+
+}
+
+
+.section{
+
+    padding:18px;
+
+}
+
+
+.section h2{
+
+    font-size:20px;
+
+}
+
+
+
+}
+
+
+
+
+/* ==========================================
+   PRINT HIDE
+========================================== */
+
+
+@media print{
+
+
+button,
+.header-buttons,
+footer{
+
+    display:none !important;
+
+}
+
+
+body{
+
+    background:white;
+
+}
+
+
+.section,
+.card,
+header{
+
+    box-shadow:none;
+
+    border:1px solid #ddd;
+
+}
+
+
+}

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='dashboard.css') }}">
+
+</head>
+
+<body>
+
+<div class="page">
+
+<div class="container">
+
+    <h1>📊 Student Management Dashboard</h1>
+
+    <hr>
+
+    <div class="cards">
+
+        <!-- UG Batches -->
+        <div class="card blue">
+
+            <h2>{{ total_ug_batches }}</h2>
+
+            <p>UG Batches</p>
+
+        </div>
+
+        <!-- PG Batches -->
+        <div class="card green">
+
+            <h2>{{ total_pg_batches }}</h2>
+
+            <p>PG Batches</p>
+
+        </div>
+
+        <!-- UG Students -->
+        <div class="card orange">
+
+            <h2>{{ total_ug_students }}</h2>
+
+            <p>UG Students</p>
+
+        </div>
+
+        <!-- PG Students -->
+        <div class="card purple">
+
+            <h2>{{ total_pg_students }}</h2>
+
+            <p>PG Students</p>
+
+        </div>
+
+        <!-- Total Students -->
+        <div class="card red total-card">
+
+            <h2>{{ total_students }}</h2>
+
+            <p>Total Students</p>
+
+        </div>
+
+    </div>
+
+    <hr>
+
+    <div class="buttons">
+
+        <a href="{{ url_for('admin') }}">
+            <button class="view-btn">
+            📋 View All Students
+            </button>
+        </a>
+
+        <a href="{{ url_for('admin') }}">
+            <button class="admin-btn">
+                ⚙ Admin Panel
+            </button>
+        </a>
+
+        <a href="{{ url_for('home') }}">
+            <button class="home-btn">
+                🏠 Home
+            </button>
+        </a>
+
+    </div>
+
+</div>
+
+</div>
+
+</body>
+
+</html>

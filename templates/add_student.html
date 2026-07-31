@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Add New Student</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='add_student.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>New Student Admission</h2>
+
+<form 
+action="{{ url_for('save_new_student') }}" 
+method="POST"
+enctype="multipart/form-data">
+
+<input type="hidden" name="course" value="{{ course }}">
+<input type="hidden" name="batch" value="{{ batch }}">
+
+<!-- ================= BASIC DETAILS ================= -->
+
+<div class="section">
+
+<h3>Basic Details</h3>
+
+<label>Register Number</label>
+
+<input
+type="text"
+name="RegNo"
+placeholder="25PCS001"
+required>
+
+<label>Student Name</label>
+
+<input
+type="text"
+name="Name"
+required>
+
+<label>Course</label>
+
+<input
+type="text"
+name="Course"
+value="{{ course }}"
+readonly>
+
+<label>Batch</label>
+
+<input
+type="text"
+name="Batch"
+value="{{ batch }}"
+readonly>
+
+<label>Date of Birth</label>
+
+<input
+type="date"
+name="DOB">
+
+<label>Community</label>
+
+<input
+type="text"
+name="Community">
+
+<label>Father Name</label>
+
+<input
+type="text"
+name="ParentName">
+
+<label>Mother Name</label>
+
+<input
+type="text"
+name="MotherName">
+
+<label>Father Occupation</label>
+
+<input
+type="text"
+name="faOccupation">
+
+<label>Mother Occupation</label>
+
+<input
+type="text"
+name="moOccupation">
+
+<label>Address</label>
+
+<textarea
+name="Address"
+rows="3"></textarea>
+
+<label>Pincode</label>
+
+<input
+type="text"
+name="Pincode">
+
+<label>Mobile</label>
+
+<input
+type="text"
+name="Mobile">
+
+<label>First Graduate</label>
+
+<select name="FirstGraduate">
+
+<option value="">Select</option>
+<option>Yes</option>
+<option>No</option>
+
+</select>
+<label>Bank Name</label>
+
+<input
+type="text"
+name="BankName">
+
+<label>Branch</label>
+
+<input
+type="text"
+name="Branch">
+
+<label>Account Number</label>
+
+<input
+type="text"
+name="BankAccount">
+
+<label>IFSC Code</label>
+
+<input
+type="text"
+name="IFSC">
+
+<label>MICR</label>
+
+<input
+type="text"
+name="MICR">
+
+<label>Aadhar Number</label>
+
+<input
+type="text"
+name="Aadhar">
+
+<label>Blood Group</label>
+
+<select name="BloodGroup">
+
+<option value="">Select</option>
+
+<option>A+</option>
+<option>A-</option>
+<option>B+</option>
+<option>B-</option>
+<option>AB+</option>
+<option>AB-</option>
+<option>O+</option>
+<option>O-</option>
+
+</select>
+
+<label>UMIS ID</label>
+
+<input
+type="text"
+name="UmisID">
+
+<label>EMIS Number</label>
+
+<input
+type="text"
+name="EmisNo">
+
+<label>Email</label>
+
+<input
+type="email"
+name="Email">
+
+<label>Student Photo</label>
+
+<input
+type="file"
+name="Photo"
+accept="image/*">
+</div>
+
+<br>
+
+<!-- ================= EXAMINATION RECORD ================= -->
+
+<div class="section">
+
+<h3>Examination Record</h3>
+
+<p><b>Semester I</b></p>
+
+<label>Subject 1 I.E</label>
+
+<input
+type="text"
+name="F1_IE">
+
+<label>Subject 1 W.E</label>
+
+<input
+type="text"
+name="F1_WE">
+
+<label>Total</label>
+
+<input
+type="text"
+name="F1_TOT">
+
+<label>Month & Year</label>
+
+<input
+type="text"
+name="F1_MY">
+
+<label>Subject 2 I.E</label>
+
+<input
+type="text"
+name="F2_IE">
+
+<label>Subject 2 W.E</label>
+
+<input
+type="text"
+name="F2_WE">
+
+<label>Total</label>
+
+<input
+type="text"
+name="F2_TOT">
+
+<label>Month & Year</label>
+
+<input
+type="text"
+name="F2_MY">
+
+<label>Subject 3 I.E</label>
+
+<input
+type="text"
+name="F3_IE">
+
+<label>Subject 3 W.E</label>
+
+<input
+type="text"
+name="F3_WE">
+
+<label>Total</label>
+
+<input
+type="text"
+name="F3_TOT">
+
+<label>Month & Year</label>
+
+<input
+type="text"
+name="F3_MY">
+<p><b>Attendance Details</b></p>
+
+<label>Semester I Attendance (%)</label>
+
+<input
+type="text"
+name="Attendance_I">
+
+<label>Semester II Attendance (%)</label>
+
+<input
+type="text"
+name="Attendance_II">
+
+<label>Semester III Attendance (%)</label>
+
+<input
+type="text"
+name="Attendance_III">
+
+<label>Semester IV Attendance (%)</label>
+
+<input
+type="text"
+name="Attendance_IV">
+
+<label>Semester V Attendance (%)</label>
+
+<input
+type="text"
+name="Attendance_V">
+
+<label>Semester VI Attendance (%)</label>
+
+<input
+type="text"
+name="Attendance_VI">
+
+<label>Overall Attendance (%)</label>
+
+<input
+type="text"
+name="Overall_Percentage">
+
+</div>
+
+<br>
+
+<!-- ================= OFFICE DETAILS ================= -->
+
+<div class="section">
+
+<h3>Office Details</h3>
+
+<label>Incharge Name</label>
+
+<input
+type="text"
+name="Incharge">
+
+<label>Remarks</label>
+
+<textarea
+name="Remarks"
+rows="4"></textarea>
+
+</div>
+
+<br>
+
+<div class="buttons">
+
+<button
+type="submit"
+class="save-btn">
+
+💾 Save Student
+
+</button>
+
+<button
+type="reset"
+class="reset-btn">
+
+🔄 Reset
+
+</button>
+
+<a href="{{ url_for('admin') }}" class="back-btn">
+← Back
+</a>
+
+</div>
+
+</form>
+
+</div>
+
+</body>
+
+</html>

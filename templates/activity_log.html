@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Activity Log</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static',filename='activity_log.css') }}">
+
+</head>
+
+<body>
+
+
+<div class="container">
+
+
+<h1>📋 Activity Log</h1>
+
+
+{% if logs %}
+
+
+<table>
+
+<tr>
+
+<th>S.No</th>
+
+<th>Activity</th>
+
+</tr>
+
+
+{% for log in logs %}
+
+<tr>
+
+<td>{{ loop.index }}</td>
+
+<td>{{ log }}</td>
+
+</tr>
+
+{% endfor %}
+
+
+</table>
+
+
+{% else %}
+
+
+<h3>No Activity Found</h3>
+
+
+{% endif %}
+
+
+
+<br>
+<form action="{{ url_for('clear_log') }}"
+method="POST"
+onsubmit="return confirm('Delete all activity history?');">
+
+<button class="delete-btn">
+
+🗑 Clear History
+
+</button>
+
+</form>
+
+<a href="{{ url_for('admin') }}">
+
+<button>
+⬅ Back
+</button>
+
+</a>
+
+
+</div>
+
+
+</body>
+</html>

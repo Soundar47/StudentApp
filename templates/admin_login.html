@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Login</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='admin_login.css') }}">
+
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <div class="login-box">
+
+        <h1>🔒 Admin Login</h1>
+
+        <p class="subtitle">
+            Student Management System
+        </p>
+
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if message %}
+        <div class="success">
+            {{ message }}
+        </div>
+        {% endif %}
+
+        <form action="{{ url_for('admin_login') }}"
+              method="POST"
+              autocomplete="off">
+
+            <label for="username">Username</label>
+
+            <input
+                id="username"
+                type="text"
+                name="username"
+                placeholder="Enter Username"
+                autocomplete="username"
+                required
+                autofocus>
+
+            <label for="password">Password</label>
+
+            <input
+                id="password"
+                type="password"
+                name="password"
+                placeholder="Enter Password"
+                autocomplete="current-password"
+                required>
+
+            <button type="submit">
+                🔓 Login
+            </button>
+
+        </form>
+
+        <a href="{{ url_for('home') }}">
+            <button type="button" class="home-btn">
+                🏠 Back to Home
+            </button>
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>College Timetable Management</title>
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='time_table.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>College Timetable Management</h1>
+
+<!-- ===============================
+TIMETABLE DETAILS
+================================ -->
+
+<div class="details">
+
+<div>
+
+<label>Department</label>
+
+<select id="department">
+
+<option>B.Sc Computer Science</option>
+<option>BCA</option>
+<option>M.Sc Computer Science</option>
+
+</select>
+
+</div>
+
+<div>
+
+<label>Semester</label>
+
+<select id="semester">
+
+<option>I</option>
+<option>II</option>
+<option>III</option>
+<option>IV</option>
+
+</select>
+
+</div>
+
+<div>
+
+<label>Section</label>
+
+<select id="section">
+
+<option>A</option>
+<option>B</option>
+
+</select>
+
+</div>
+
+<div>
+
+<label>Faculty</label>
+
+<input
+type="text"
+id="faculty"
+placeholder="Faculty Name">
+
+</div>
+
+</div>
+
+<hr>
+
+<!-- ===============================
+SUBJECT MASTER
+================================ -->
+
+<h2>Subject Master</h2>
+
+<table id="subjectTable">
+
+<thead>
+
+<tr>
+
+<th>Subject</th>
+<th>Type</th>
+<th>Periods / Week</th>
+<th>Lab Sessions / Week</th>
+<th>Lab Position</th>
+<th>Faculty</th>
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="subjectBody">
+
+<tr>
+
+<td contenteditable="true">
+
+Python Programming
+
+</td>
+
+<td>
+
+<select class="subjectType">
+
+<option value="Theory" selected>Theory</option>
+
+<option value="Lab">Lab</option>
+
+</select>
+
+</td>
+
+<td>
+
+<input
+type="number"
+min="0"
+value="5">
+
+</td>
+
+<td>
+
+<input
+type="number"
+min="0"
+value="0">
+
+</td>
+
+<td>
+
+<select
+class="labPosition"
+disabled>
+
+<option value="Auto">
+
+Auto
+
+</option>
+
+<option value="First">
+
+P1-P3
+
+</option>
+
+<option value="Last">
+
+P3-P5
+
+</option>
+
+</select>
+
+</td>
+
+<td contenteditable="true">
+
+Mr Kumar
+
+</td>
+
+<td>
+
+<button
+class="deleteBtn">
+
+Delete
+
+</button>
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+<br>
+
+<button id="addSubject">
+
++ Add Subject
+
+</button>
+
+<button id="generate">
+
+Generate Timetable
+
+</button>
+
+<button id="rearrange">
+
+🔄 Rearrange
+
+</button>
+
+<hr>
+
+<!-- ===============================
+GENERATED TIMETABLE
+================================ -->
+
+<div id="generatedSection" style="display:none;">
+
+<h2>Generated Timetable</h2>
+
+<table id="timeTable">
+
+<thead>
+
+<tr>
+
+<th>Day</th>
+
+<th>P1</th>
+
+<th>P2</th>
+
+<th>P3</th>
+
+<th>P4</th>
+
+<th>P5</th>
+
+</tr>
+
+</thead>
+
+<tbody id="tableBody">
+
+<tr>
+
+<td>Monday</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+<tr>
+
+<td>Tuesday</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+<tr>
+
+<td>Wednesday</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+<tr>
+
+<td>Thursday</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+<tr>
+
+<td>Friday</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+<tr>
+
+<td>Saturday</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+<br>
+
+<button id="edit">
+
+Edit
+
+</button>
+
+<button id="save">
+
+Save
+
+</button>
+
+<button id="delete">
+
+Delete
+
+</button>
+
+<button onclick="window.print()">
+
+Print
+
+</button>
+
+</div>
+
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,365 @@
+/* ==========================================
+   RESET
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+/* ==========================================
+   BODY
+========================================== */
+
+body{
+    font-family:"Times New Roman", serif;
+    background:#eef2f7;
+    color:#222;
+}
+
+/* ==========================================
+   PAGE
+========================================== */
+
+.page{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+/* ==========================================
+   MAIN CONTAINER
+========================================== */
+
+.container{
+    width:600px;
+    max-width:95%;
+    background:#ffffff;
+    padding:30px;
+    border-radius:14px;
+    box-shadow:0 10px 25px rgba(0,0,0,.12);
+}
+
+/* ==========================================
+   TITLE
+========================================== */
+
+.container h2{
+    text-align:center;
+    color:#0d47a1;
+    font-size:34px;
+    margin-bottom:35px;
+}
+
+/* ==========================================
+   COURSE BUTTONS
+========================================== */
+
+.course-buttons{
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.course-buttons button{
+    width:180px;
+    height:50px;
+    border:none;
+    border-radius:8px;
+    background:#1565c0;
+    color:#fff;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.course-buttons button:hover{
+    background:#0d47a1;
+    transform:translateY(-2px);
+}
+
+/* ==========================================
+   CARD
+========================================== */
+
+.card{
+    width:100%;
+    background:#fafafa;
+    border:1px solid #d5d5d5;
+    border-radius:10px;
+    padding:10px;
+    margin-top:20px;
+    animation:fadeIn .3s ease;
+}
+
+.card h3{
+    text-align:center;
+    color:#1565c0;
+    font-size:24px;
+    margin-bottom:20px;
+}
+
+/* ==========================================
+   FORM CARD
+========================================== */
+
+.form-card{
+    display:none;
+}
+
+/* ==========================================
+   FORM
+========================================== */
+
+form{
+    width:100%;
+}
+
+/* ==========================================
+   LABEL
+========================================== */
+
+label{
+    display:block;
+    width:50%;
+    margin:0 auto 8px;
+    font-size:20px;
+    font-weight:bold;
+}
+
+/* ==========================================
+   INPUT & SELECT
+========================================== */
+
+input,
+select{
+    width:50%;
+    display:block;
+    margin:0 auto 20px;
+    padding:12px;
+    font-size:17px;
+    border:1px solid #bdbdbd;
+    border-radius:6px;
+    transition:.3s;
+}
+
+input:focus,
+select:focus{
+    outline:none;
+    border-color:#1976d2;
+    box-shadow:0 0 6px rgba(25,118,210,.30);
+}
+
+/* ==========================================
+   BUTTON
+========================================== */
+
+button{
+    cursor:pointer;
+}
+/* ==========================================
+   SEARCH BUTTON
+========================================== */
+
+.search-btn{
+    width:50%;
+    display:block;
+    margin:10px auto 0;
+    padding:13px;
+    background:#2e7d32;
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    font-size:18px;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.search-btn:hover{
+    background:#1b5e20;
+    transform:translateY(-2px);
+}
+
+/* ==========================================
+   ADMIN PANEL
+========================================== */
+
+.admin-card{
+    text-align:center;
+}
+
+.admin-card p{
+    margin:15px 0 25px;
+    color:#555;
+    font-size:18px;
+    line-height:1.7;
+}
+
+.admin-card button{
+    width:50%;
+    padding:10px;
+    border:none;
+    border-radius:6px;
+    background:#ef6c00;
+    color:#fff;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.admin-card button:hover{
+    background:#d84315;
+    transform:translateY(-2px);
+}
+
+/* ==========================================
+   LINKS
+========================================== */
+
+a{
+    text-decoration:none;
+}
+
+/* ==========================================
+   FADE ANIMATION
+========================================== */
+
+@keyframes fadeIn{
+
+from{
+    opacity:0;
+    transform:translateY(10px);
+}
+
+to{
+    opacity:1;
+    transform:translateY(0);
+}
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:768px){
+
+.page{
+    padding:15px;
+}
+
+.container{
+    width:100%;
+    padding:20px;
+}
+
+.container h2{
+    font-size:28px;
+}
+
+.course-buttons{
+    flex-direction:column;
+    gap:15px;
+}
+
+.course-buttons button{
+    width:100%;
+}
+
+.card{
+    padding:20px;
+}
+
+.card h3{
+    font-size:22px;
+}
+
+label{
+    width:100%;
+}
+
+input,
+select{
+    width:100%;
+}
+
+.search-btn{
+    width:50%;
+}
+
+.admin-card button{
+    width:50%;
+}
+
+}
+
+/* ==========================================
+   PRINT
+========================================== */
+
+@media print{
+
+body{
+    background:#fff;
+}
+
+.page{
+    padding:0;
+}
+
+.container{
+    width:100%;
+    box-shadow:none;
+    border:none;
+    padding:20px;
+}
+
+.course-buttons,
+.admin-card,
+button{
+    display:none;
+}
+
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-track{
+    background:#eeeeee;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#1565c0;
+    border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#0d47a1;
+}
+
+/* ==========================================
+   FOOTER
+========================================== */
+
+.footer{
+    margin-top:25px;
+    text-align:center;
+    color:#777;
+    font-size:14px;
+}
+
+/* ==========================================
+   END OF FILE
+========================================== */

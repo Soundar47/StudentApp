@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Student Search</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="container">
+
+        <h2>{{ course }} Student Search</h2>
+
+        <h3>
+            Batch :
+            {{ batch.replace("_","-") }}
+        </h3>
+
+        {% if error %}
+
+        <div class="error">
+
+            {{ error }}
+
+        </div>
+
+        {% endif %}
+
+        <form
+            action="/student-search"
+            method="POST">
+
+            <input
+                type="hidden"
+                name="course"
+                value="{{ course }}">
+
+            <input
+                type="hidden"
+                name="batch"
+                value="{{ batch }}">
+
+           <label>Search By</label>
+
+            <select name="search_type">
+                <option value="regno">Register Number</option>
+                <option value="name">Student Name</option>
+            </select>
+
+            <label>Enter Register Number / Student Name</label>
+
+            <input type="text" name="keyword" required>
+            <button
+                class="search-btn"
+                type="submit">
+
+                Search
+
+            </button>
+
+        </form>
+
+        <br>
+
+        <a href="/"><button>← Back Home</button></a>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

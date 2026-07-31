@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Results</title>
+</head>
+<body>
+
+<h2>Matching Students</h2>
+
+<table border="1" cellpadding="8">
+
+<tr>
+    <th>Register No</th>
+    <th>Name</th>
+    <th>Action</th>
+</tr>
+
+{% for student in students %}
+
+<tr>
+
+<td>{{ student.RegNo }}</td>
+
+<td>{{ student.Name }}</td>
+
+<td>
+
+<form action="{{ url_for('student_search') }}" method="POST">
+
+<input type="hidden" name="course" value="{{ course }}">
+<input type="hidden" name="batch" value="{{ batch }}">
+<input type="hidden" name="search_type" value="regno">
+<input type="hidden" name="keyword" value="{{ student.RegNo }}">
+
+<button type="submit">
+View
+</button>
+
+</form>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+<a href="/"><button>← Back Home</button></a>
+
+</body>
+</html>

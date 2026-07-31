@@ -1,0 +1,352 @@
+/* ==========================================
+   RESET
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+/* ==========================================
+   BODY
+========================================== */
+
+body{
+    font-family:"Times New Roman", serif;
+    background:#eef2f7;
+    color:#222;
+}
+
+/* ==========================================
+   CONTAINER
+========================================== */
+
+.container{
+
+    width:90%;
+    max-width:1000px;
+    margin:40px auto;
+
+    background:#fff;
+
+    padding:30px;
+
+    border-radius:10px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.15);
+
+}
+
+/* ==========================================
+   TITLE
+========================================== */
+
+h2{
+
+    text-align:center;
+
+    color:#0d47a1;
+
+    margin-bottom:15px;
+
+    font-size:30px;
+
+}
+
+/* ==========================================
+   SEARCH INFO
+========================================== */
+
+.search-info{
+
+    text-align:center;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    color:#555;
+
+    margin-bottom:20px;
+
+}
+
+/* ==========================================
+   TABLE CONTAINER
+========================================== */
+
+.table-container{
+
+    width:100%;
+
+    overflow-x:auto;
+
+}
+
+/* ==========================================
+   TABLE
+========================================== */
+
+table{
+
+    width:100%;
+
+    min-width:700px;
+
+    border-collapse:collapse;
+
+}
+
+table th{
+
+    background:#1565c0;
+
+    color:#fff;
+
+    padding:12px;
+
+    text-align:center;
+
+    font-size:18px;
+
+}
+
+table td{
+
+    border:1px solid #ccc;
+
+    padding:12px;
+
+    text-align:center;
+
+    font-size:16px;
+
+}
+
+table tr:nth-child(even){
+
+    background:#f7f7f7;
+
+}
+
+table tr:hover{
+
+    background:#e3f2fd;
+
+}
+
+/* ==========================================
+   BUTTON FORM
+========================================== */
+
+form{
+
+    margin:0;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+/* ==========================================
+   BUTTON
+========================================== */
+
+button{
+
+    min-width:100px;
+
+    padding:8px 18px;
+
+    background:#2e7d32;
+
+    color:#fff;
+
+    border:none;
+
+    border-radius:5px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    font-weight:bold;
+
+    transition:.3s;
+
+}
+
+button:hover{
+
+    background:#1b5e20;
+
+    transform:scale(1.05);
+
+}
+
+/* ==========================================
+   BACK BUTTON
+========================================== */
+
+.back{
+
+    display:block;
+
+    width:200px;
+
+    margin:30px auto 0;
+
+    text-decoration:none;
+
+}
+
+.back button{
+
+    width:100%;
+
+    background:#ef6c00;
+
+}
+
+.back button:hover{
+
+    background:#d84315;
+
+}
+
+/* ==========================================
+   NO RECORD
+========================================== */
+
+.no-record{
+
+    text-align:center;
+
+    color:red;
+
+    font-size:20px;
+
+    font-weight:bold;
+
+    margin-top:30px;
+
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media(max-width:768px){
+
+.container{
+
+    width:95%;
+
+    padding:20px;
+
+}
+
+h2{
+
+    font-size:24px;
+
+}
+
+.search-info{
+
+    font-size:16px;
+
+}
+
+.table-container{
+
+    overflow-x:auto;
+
+}
+
+table{
+
+    min-width:650px;
+
+}
+
+table th,
+table td{
+
+    font-size:14px;
+
+    padding:10px;
+
+}
+
+button{
+
+    font-size:14px;
+
+}
+
+}
+
+/* ==========================================
+   PRINT
+========================================== */
+
+@media print{
+
+body{
+
+    background:#fff;
+
+}
+
+.container{
+
+    width:100%;
+
+    box-shadow:none;
+
+}
+
+button{
+
+    display:none;
+
+}
+
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+::-webkit-scrollbar{
+
+    height:8px;
+
+    width:8px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:#eeeeee;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#1565c0;
+
+    border-radius:10px;
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:#0d47a1;
+
+}

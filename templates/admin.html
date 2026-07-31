@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='admin.css') }}">
+
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <!-- ================= HEADER ================= -->
+
+    <header>
+
+        <div class="logo">
+            <h1>🎓 Student Management System</h1>
+            <p>Administrator Dashboard</p>
+        </div>
+
+        <div class="header-buttons">
+
+            <a href="{{ url_for('home') }}">
+                <button class="home-btn">
+                    🏠 Home
+                </button>
+            </a>
+
+            <a href="{{ url_for('logout') }}">
+                <button class="logout-btn">
+                    🚪 Logout
+                </button>
+            </a>
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= FIRST ROW ================= -->
+
+    <div class="cards">
+
+        <div class="card">
+
+            <h2>📁</h2>
+
+            <h3>Upload Data</h3>
+
+            <p>
+                Upload CSV / Excel student data.
+            </p>
+
+            <button onclick="showSection('upload')">
+                Open
+            </button>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>➕</h2>
+
+            <h3>Add Student</h3>
+
+            <p>
+                Add new student into existing batch.
+            </p>
+
+            <button onclick="showSection('add')">
+                Open
+            </button>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>🗑</h2>
+
+            <h3>Delete Batch</h3>
+
+            <p>
+                Remove complete batch data.
+            </p>
+
+            <button onclick="showSection('delete')">
+                Open
+            </button>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>🔍</h2>
+
+            <h3>Student Search</h3>
+
+            <p>
+                Search UG / PG student.
+            </p>
+
+            <button onclick="showSection('search')">
+                Open
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= SECOND ROW ================= -->
+
+    <div class="cards">
+
+        <div class="card">
+
+            <h2>📋</h2>
+
+            <h3>View Students</h3>
+
+            <p>
+                View all student records.
+            </p>
+
+            <a href="{{ url_for('view_students') }}">
+                <button>
+                    Open
+                </button>
+            </a>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>📊</h2>
+
+            <h3>Dashboard</h3>
+
+            <p>
+                Student statistics.
+            </p>
+
+            <a href="{{ url_for('dashboard') }}">
+                <button>
+                    Open
+                </button>
+            </a>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>📜</h2>
+
+            <h3>Activity Log</h3>
+
+            <p>
+                Admin activities.
+            </p>
+
+            <a href="{{ url_for('activity_log') }}">
+                <button>
+                    Open
+                </button>
+            </a>
+
+        </div>
+
+
+        <div class="card">
+
+            <h2>🔑</h2>
+
+            <h3>Change Password</h3>
+
+            <p>
+                Change admin password.
+            </p>
+
+            <a href="{{ url_for('change_password') }}">
+                <button>
+                    Open
+                </button>
+            </a>
+
+        </div>
+
+    <div class="card">
+
+    <h2>📅</h2>
+
+    <h3>Time Table</h3>
+
+    <p>
+        Manage class schedules.
+    </p>
+
+    <a href="{{ url_for('timetable') }}">
+            <button>
+                Open
+            </button>
+            </a>
+
+        </div>  
+    </div>
+
+    <!-- ================= ALERT ================= -->
+
+    {% if message %}
+    <div class="alert success">
+        {{ message }}
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert error">
+        {{ error }}
+    </div>
+    {% endif %}
+    <!-- ==========================================
+            UPLOAD STUDENT DATA
+    =========================================== -->
+
+    <div id="upload" class="section" style="display:none;">
+
+        <h2>📁 Upload Student Data</h2>
+
+        <form action="{{ url_for('upload_data') }}"
+              method="POST"
+              enctype="multipart/form-data">
+
+            <label>Course</label>
+
+            <select name="course" required>
+
+                <option value="">Select Course</option>
+                <option value="UG">UG</option>
+                <option value="PG">PG</option>
+
+            </select>
+
+
+            <label>Batch Name</label>
+
+            <input type="text"
+                   name="batch"
+                   placeholder="Example : 2026_2029"
+                   required>
+
+
+            <label>Select CSV / Excel File</label>
+
+            <input type="file"
+                   name="datafile"
+                   accept=".csv,.xls,.xlsx">
+
+
+            <p class="info">
+                Leave file empty to create an empty batch automatically.
+            </p>
+
+
+            <button type="submit">
+                📤 Upload Data
+            </button>
+
+            <button type="button"
+                    class="close-btn"
+                    onclick="closeSections()">
+                ❌ Close
+            </button>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- ==========================================
+                ADD STUDENT
+    =========================================== -->
+
+    <div id="add" class="section" style="display:none;">
+
+        <h2>➕ Add Student</h2>
+
+        <form action="{{ url_for('add_student') }}"
+              method="GET">
+
+            <label>Course</label>
+
+            <select name="course"
+                    id="add_course"
+                    onchange="loadBatch()"
+                    required>
+
+                <option value="">Select Course</option>
+                <option value="UG">UG</option>
+                <option value="PG">PG</option>
+
+            </select>
+
+
+            <label>Existing Batch</label>
+
+            <select name="batch"
+                    id="batch_list"
+                    required>
+
+                <option value="">
+                    Select Batch
+                </option>
+
+            </select>
+
+
+            <button type="submit">
+                Continue
+            </button>
+
+            <button type="button"
+                    class="close-btn"
+                    onclick="closeSections()">
+
+                Close
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- ==========================================
+                DELETE BATCH
+    =========================================== -->
+
+    <div id="delete" class="section" style="display:none;">
+
+        <h2>🗑 Delete Batch</h2>
+
+        <form action="{{ url_for('delete_batch') }}"
+              method="POST">
+
+            <label>Course</label>
+
+            <select name="course" required>
+
+                <option value="UG">UG</option>
+                <option value="PG">PG</option>
+
+            </select>
+
+
+            <label>Batch Name</label>
+
+            <input type="text"
+                   name="batch"
+                   placeholder="Example : 2026_2029"
+                   required>
+
+
+            <button type="submit"
+                    class="delete-button"
+                    onclick="return confirm('Delete this batch permanently?');">
+
+                🗑 Delete Batch
+
+            </button>
+
+            <button type="button"
+                    class="close-btn"
+                    onclick="closeSections()">
+
+                Close
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+
+    <!-- ==========================================
+                STUDENT SEARCH
+    =========================================== -->
+
+    <div id="search" class="section" style="display:none;">
+
+        <h2>🔍 Student Search</h2>
+
+        <form action="{{ url_for('student_search') }}"
+              method="POST">
+
+            <label>Course</label>
+
+            <select name="course" required>
+
+                <option value="UG">UG</option>
+                <option value="PG">PG</option>
+
+            </select>
+
+
+            <label>Batch</label>
+
+            <input type="text"
+                   name="batch"
+                   placeholder="Example : 2026_2029"
+                   required>
+
+
+            <label>Search Type</label>
+
+            <select name="search_type">
+
+                <option value="regno">
+                    Register Number
+                </option>
+
+                <option value="name">
+                    Student Name
+                </option>
+
+            </select>
+
+
+            <label>Keyword</label>
+
+            <input type="text"
+                   name="keyword"
+                   placeholder="Enter Register Number or Name"
+                   required>
+
+
+            <button type="submit">
+
+                🔍 Search Student
+
+            </button>
+
+            <button type="button"
+                    class="close-btn"
+                    onclick="closeSections()">
+
+                Close
+
+            </button>
+
+        </form>
+
+    </div>
+    <!-- ==========================================
+                    FOOTER
+    =========================================== -->
+
+    <footer>
+
+        <hr>
+
+        <p>
+            © 2026 Student Management System
+        </p>
+
+        <p>
+            Flask • Python • Pandas
+        </p>
+
+    </footer>
+
+</div>
+
+
+<!-- ==========================================
+                JAVASCRIPT
+========================================== -->
+
+<script>
+
+function closeSections() {
+
+    let sections = document.querySelectorAll(".section");
+
+    sections.forEach(function(section) {
+        section.style.display = "none";
+    });
+
+}
+
+
+function showSection(id) {
+
+    closeSections();
+
+    let section = document.getElementById(id);
+
+    section.style.display = "block";
+
+    window.scrollTo({
+
+        top: section.offsetTop - 20,
+        behavior: "smooth"
+
+    });
+
+}
+
+
+function loadBatch() {
+
+    let course = document.getElementById("add_course").value;
+
+    let batch = document.getElementById("batch_list");
+
+    batch.innerHTML = "";
+
+    let first = document.createElement("option");
+    first.text = "Select Batch";
+    first.value = "";
+    batch.add(first);
+
+    let data = {
+
+        UG: {{ ug_batches | tojson }},
+        PG: {{ pg_batches | tojson }}
+
+    };
+
+    if (!course || !data[course]) {
+        return;
+    }
+
+    data[course].forEach(function(item) {
+
+        let option = document.createElement("option");
+
+        option.text = item;
+        option.value = item;
+
+        batch.add(option);
+
+    });
+
+}
+
+</script>
+
+</body>
+
+</html>

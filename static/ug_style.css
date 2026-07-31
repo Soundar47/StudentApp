@@ -1,0 +1,1125 @@
+/* ==========================
+   RESET
+========================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+/* ==========================
+   BODY
+========================== */
+
+body{
+
+    font-family:"Times New Roman", serif;
+    background:#f2f2f2;
+    color:#000;
+    font-size:14px;
+
+}
+
+/* ==========================
+   CONTAINER
+========================== */
+
+.container{
+
+    width:210mm;
+    min-height:297mm;
+
+    margin:20px auto;
+
+    background:#fff;
+
+    padding:18px;
+
+    border:1px solid #000;
+
+    box-shadow:0 0 8px rgba(0,0,0,.15);
+
+}
+
+/* ==========================
+   HEADER
+========================== */
+
+.header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.logo{
+
+    width:95px;
+
+    height:95px;
+
+}
+
+.photo{
+
+    width:110px;
+
+    height:130px;
+
+    border:1px solid #000;
+
+    object-fit:cover;
+
+}
+
+.title{
+
+    flex:1;
+
+    text-align:center;
+
+}
+
+.title h2{
+
+    font-size:22px;
+
+    margin-bottom:5px;
+
+}
+
+.title h3{
+
+    font-size:17px;
+
+    margin-bottom:4px;
+
+}
+
+.course{
+
+    margin:10px 0;
+
+    text-align:center;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+}
+
+/* Course & Batch fields must NOT stretch full width like other
+   editable fields, or they break onto their own centered line
+   and split "COURSE :" from the course name / batch bracket. */
+
+.course input[name="Course"]{
+
+    width:auto;
+    display:inline;
+    text-align:center;
+
+}
+
+.course input[name="Batch"]{
+
+    display:inline;
+    text-align:center;
+
+}
+
+/* ==========================
+   EDITABLE INPUTS
+========================== */
+
+.editable{
+
+    width:100%;
+    border:none;
+    outline:none;
+    background:transparent;
+    font-family:"Times New Roman", serif;
+    font-size:14px;
+    color:#000;
+    padding:2px 4px;
+    box-sizing:border-box;
+}
+
+/* Read Only */
+
+.editable[readonly]{
+
+    border:none;
+
+    background:transparent;
+
+    pointer-events:none;
+
+    cursor:default;
+
+}
+
+/* Editing Mode */
+
+.editable:not([readonly]){
+
+    border:1px solid #1976d2;
+
+    background:#fff;
+
+}
+
+.editable:focus{
+
+    outline:none;
+
+    border:1px solid #1565c0;
+
+}
+/* ==========================
+   STUDENT DETAILS
+   (borderless / non-table look, per request)
+========================== */
+
+.info{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    margin-top:10px;
+
+}
+
+.info td{
+
+    border:none;
+
+    padding:5px 8px;
+
+    font-size:14px;
+
+    vertical-align:middle;
+
+}
+
+.info input{
+
+    width:100%;
+
+}
+
+.label{
+
+    width:15%;
+
+    font-weight:bold;
+
+    background:transparent;
+
+}
+
+/* ==========================
+   EXAMINATION TABLE
+========================== */
+
+.exam-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    table-layout:fixed;
+
+    margin-top:8px;
+
+}
+
+.exam-table th{
+
+    border:1px solid #000;
+
+    background:#efefef;
+
+    padding:5px;
+
+    font-size:12px;
+
+    font-weight:bold;
+
+}
+
+.exam-table td{
+
+    border:1px solid #000;
+
+    padding:3px;
+
+    height:28px;
+
+    text-align:center;
+
+    font-size:11px;
+
+}
+
+.exam-table tr:first-child th{
+
+    font-size:14px;
+
+    background:#dcdcdc;
+
+}
+
+.exam-table input{
+
+    width:100%;
+
+    text-align:center;
+
+    font-size:11px;
+
+}
+
+/* Subject code column: wider + left aligned so codes like
+   26UCA17W / 26ULT3/H3 don't look cramped against numeric columns */
+
+.exam-table td:first-child,
+.exam-table td:nth-child(6),
+.exam-table td:nth-child(11){
+
+    font-weight:bold;
+
+    text-align:left;
+
+    padding-left:4px;
+
+    font-size:10.5px;
+
+    white-space:nowrap;
+
+}
+
+/* ==========================
+   ATTENDANCE
+========================== */
+
+.attendance{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    margin-top:10px;
+
+}
+
+.attendance th{
+
+    border:1px solid #000;
+
+    background:#efefef;
+
+    padding:8px;
+
+}
+
+.attendance td{
+
+    border:1px solid #000;
+
+    text-align:center;
+
+    padding:6px;
+
+}
+
+.attendance input{
+
+    width:100%;
+
+    text-align:center;
+
+}
+
+/* ==========================
+   SIGNATURE
+========================== */
+
+.signature{
+
+    width:100%;
+
+    border:none;
+
+    margin-top:30px;
+
+}
+
+.signature td{
+
+    border:none;
+
+    font-size:15px;
+
+    vertical-align:bottom;
+
+}
+
+.signature td:last-child{
+
+    text-align:right;
+
+}
+
+.signature input{
+
+    border:none;
+
+    background:transparent;
+
+    text-align:right;
+
+    font-weight:bold;
+
+    width:200px;
+
+}
+/* ==========================
+   BUTTON BAR
+========================== */
+
+.button-bar{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:15px;
+
+    margin:25px 0;
+
+    flex-wrap:wrap;
+
+}
+
+/* ==========================
+   COMMON BUTTON
+========================== */
+
+.button-bar button{
+
+    min-width:150px;
+
+    height:42px;
+
+    border:none;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    font-family:"Times New Roman", serif;
+
+    transition:.3s;
+
+    color:#fff;
+
+}
+
+/* ==========================
+   CHANGE BUTTON
+========================== */
+
+#changeBtn{
+
+    background:#1976d2;
+
+}
+
+#changeBtn:hover{
+
+    background:#1259a7;
+
+}
+
+/* ==========================
+   SAVE BUTTON
+========================== */
+
+#saveBtn{
+
+    background:#2e7d32;
+
+}
+
+#saveBtn:hover{
+
+    background:#1b5e20;
+
+}
+
+/* ==========================
+   PRINT BUTTON
+========================== */
+
+.button-bar button[onclick="printPage()"]{
+
+    background:#ef6c00;
+
+}
+
+.button-bar button[onclick="printPage()"]:hover{
+
+    background:#d45b00;
+
+}
+
+/* ==========================
+   BACK BUTTON
+========================== */
+
+.button-bar a button{
+
+    background:#616161;
+
+}
+
+.button-bar a button:hover{
+
+    background:#424242;
+
+}
+
+/* ==========================
+   GENERAL EFFECT
+========================== */
+
+.button-bar button:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 3px 8px rgba(0,0,0,.25);
+
+}
+
+.button-bar button:active{
+
+    transform:scale(.98);
+
+}
+
+/* ==========================
+   SUCCESS MESSAGE
+========================== */
+
+.message{
+
+    width:100%;
+
+    text-align:center;
+
+    color:#2e7d32;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    margin:10px 0;
+
+}
+
+/* ==========================
+   ERROR MESSAGE
+========================== */
+
+.error{
+
+    width:100%;
+
+    text-align:center;
+
+    color:#c62828;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    margin:10px 0;
+
+}
+/* ==========================
+   PRINT SETTINGS
+========================== */
+
+@page{
+
+    size:A4 portrait;
+
+    margin:8mm;
+
+}
+
+@media print{
+
+/* ==========================
+   PAGE
+========================== */
+
+body{
+
+    background:#fff;
+
+    margin:0;
+
+    padding:0;
+
+    width:210mm;
+
+    min-height:297mm;
+
+    -webkit-print-color-adjust:exact;
+
+    print-color-adjust:exact;
+
+}
+
+.container{
+
+    width:100%;
+
+    margin:0;
+
+    padding:8px;
+
+    border:1px solid #000;
+
+    box-shadow:none;
+
+}
+
+/* ==========================
+   HIDE BUTTONS
+========================== */
+
+.no-print,
+.button-bar,
+button{
+
+    display:none !important;
+
+}
+
+/* ==========================
+   INPUTS LOOK LIKE TEXT
+========================== */
+
+input,
+textarea,
+select{
+
+    border:none !important;
+
+    outline:none !important;
+
+    background:transparent !important;
+
+    box-shadow:none !important;
+
+    color:#000 !important;
+
+    font:inherit !important;
+
+    padding:0 !important;
+
+    margin:0 !important;
+
+    appearance:none;
+
+    -webkit-appearance:none;
+
+}
+
+/* Read-only inputs */
+
+.editable{
+
+    border:none !important;
+
+    background:transparent !important;
+
+}
+
+/* ==========================
+   TABLES
+========================== */
+
+table{
+
+    page-break-inside:avoid;
+
+}
+
+tr{
+
+    page-break-inside:avoid;
+
+}
+
+td,
+th{
+
+    page-break-inside:avoid;
+
+}
+
+img{
+
+    page-break-inside:avoid;
+
+}
+
+/* ==========================
+   HEADER
+========================== */
+
+.logo{
+
+    width:90px;
+
+    height:90px;
+
+}
+
+.photo{
+
+    width:105px;
+
+    height:125px;
+
+}
+
+.title h2{
+
+    font-size:20px;
+
+}
+
+.title h3{
+
+    font-size:16px;
+
+}
+
+.course{
+
+    font-size:17px;
+
+}
+
+/* ==========================
+   STUDENT DETAILS
+========================== */
+
+.info td{
+
+    font-size:12px;
+
+    padding:5px;
+
+}
+
+/* ==========================
+   EXAM TABLE
+========================== */
+
+.exam-table th{
+
+    font-size:11px;
+
+}
+
+.exam-table td{
+
+    font-size:10px;
+
+    height:24px;
+
+    padding:2px;
+
+}
+
+/* ==========================
+   ATTENDANCE
+========================== */
+
+.attendance th,
+.attendance td{
+
+    font-size:11px;
+
+    padding:5px;
+
+}
+
+/* ==========================
+   SIGNATURE
+========================== */
+
+.signature td{
+
+    font-size:13px;
+
+}
+
+/* ==========================
+   REMOVE LINK COLORS
+========================== */
+
+a{
+
+    color:#000;
+
+    text-decoration:none;
+
+}
+
+}
+/* ==========================
+   RESPONSIVE SCREEN VIEW
+   MOBILE + TABLET SUPPORT
+========================== */
+
+
+/* Tablet */
+
+@media screen and (max-width:900px){
+
+    .container{
+
+        width:95%;
+
+        min-height:auto;
+
+        margin:15px auto;
+
+        padding:15px;
+
+    }
+
+
+    .header{
+
+        gap:15px;
+
+    }
+
+
+    .logo{
+
+        width:75px;
+
+        height:75px;
+
+    }
+
+
+    .photo{
+
+        width:90px;
+
+        height:110px;
+
+    }
+
+
+    .title h2{
+
+        font-size:18px;
+
+    }
+
+
+    .title h3{
+
+        font-size:14px;
+
+    }
+
+
+    .exam-table{
+
+        overflow-x:auto;
+
+        display:block;
+
+    }
+
+
+}
+
+
+
+/* Mobile */
+
+@media screen and (max-width:600px){
+
+
+    body{
+
+        font-size:13px;
+
+    }
+
+
+    .container{
+
+        width:100%;
+
+        margin:0;
+
+        padding:10px;
+
+        border:none;
+
+        box-shadow:none;
+
+    }
+
+
+
+    .header{
+
+        flex-direction:column;
+
+        text-align:center;
+
+    }
+
+
+
+    .logo{
+
+        width:70px;
+
+        height:70px;
+
+    }
+
+
+
+    .photo{
+
+        width:90px;
+
+        height:110px;
+
+    }
+
+
+
+    .title h2{
+
+        font-size:17px;
+
+    }
+
+
+    .title h3{
+
+        font-size:13px;
+
+    }
+
+
+
+    .course{
+
+        font-size:15px;
+
+    }
+
+
+
+    /* Student Details */
+
+    .info{
+
+        display:block;
+
+    }
+
+
+    .info td{
+
+        display:block;
+
+        width:100%;
+
+        padding:4px;
+
+    }
+
+
+    .label{
+
+        width:100%;
+
+    }
+
+
+
+    /* Exam table scrolling */
+
+    .exam-table{
+
+        display:block;
+
+        overflow-x:auto;
+
+        white-space:nowrap;
+
+    }
+
+
+
+    .exam-table th,
+    .exam-table td{
+
+        font-size:10px;
+
+        padding:3px;
+
+    }
+
+
+
+    /* Attendance */
+
+    .attendance{
+
+        display:block;
+
+        overflow-x:auto;
+
+    }
+
+
+
+    .button-bar{
+
+        flex-direction:column;
+
+    }
+
+
+
+    .button-bar button{
+
+        width:100%;
+
+    }
+
+
+
+    .signature td{
+
+        display:block;
+
+        text-align:center !important;
+
+        padding-top:20px;
+
+    }
+
+
+
+}
+
+
+
+/* ==========================
+   INPUT AUTO SIZE
+========================== */
+
+
+.course input{
+
+    font-weight:bold;
+
+}
+
+
+.info input{
+
+    min-width:0;
+
+}
+
+
+
+/* ==========================
+   PREVENT BREAKING
+========================== */
+
+
+.container,
+.header,
+.exam-table,
+.attendance,
+.signature{
+
+    page-break-inside:avoid;
+
+}
+
+
+
+/* ==========================
+   SMOOTH TRANSITION
+========================== */
+
+
+input,
+button{
+
+    transition:.2s ease;
+
+}
+
+
+
+/* ==========================
+   DISABLED STYLE
+========================== */
+
+
+button:disabled{
+
+    opacity:.6;
+
+    cursor:not-allowed;
+
+}
+
+
+
+/* ==========================
+   HIDDEN ELEMENT
+========================== */
+
+
+.hidden{
+
+    display:none !important;
+
+}

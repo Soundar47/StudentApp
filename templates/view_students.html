@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>View Students</title>
+
+<link rel="stylesheet"
+href="{{ url_for('static', filename='view_students.css') }}">
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<h1>🎓 Student Management System</h1>
+
+<h2>📋 View All Students</h2>
+
+
+
+<!-- ================= SEARCH FORM ================= -->
+
+<form action="{{ url_for('view_students') }}" method="POST">
+
+
+<div class="form-group">
+
+<label>Course</label>
+
+<select name="course" required>
+
+<option value="">Select Course</option>
+
+
+<option value="UG"
+{% if course == "UG" %}selected{% endif %}>
+UG
+</option>
+
+
+<option value="PG"
+{% if course == "PG" %}selected{% endif %}>
+PG
+</option>
+
+
+</select>
+
+</div>
+
+
+
+<div class="form-group">
+
+<label>Batch</label>
+
+
+<input
+
+type="text"
+
+name="batch"
+
+placeholder="Example : 2024_2027"
+
+value="{{ batch or '' }}"
+
+required>
+
+</div>
+
+
+
+<button type="submit">
+
+📋 View Students
+
+</button>
+
+
+</form>
+
+
+
+
+<!-- ================= ERROR MESSAGE ================= -->
+
+
+{% if error %}
+
+<div class="error">
+
+{{ error }}
+
+</div>
+
+{% endif %}
+
+
+
+
+
+<!-- ================= STUDENT TABLE ================= -->
+
+
+{% if students and students|length > 0 %}
+
+
+<div class="table-container">
+
+
+<table>
+
+
+<thead>
+
+<tr>
+
+<th>S.No</th>
+
+<th>Register No</th>
+
+<th>Name</th>
+
+<th>Course</th>
+
+<th>Batch</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+
+
+<tbody>
+
+
+{% for s in students %}
+
+
+<tr>
+
+
+<td>
+{{ loop.index }}
+</td>
+
+
+<td>
+
+{{ s.get('RegNo','') }}
+
+</td>
+
+
+
+<td>
+
+{{ s.get('Name','') }}
+
+</td>
+
+
+
+<td>
+
+{{ course }}
+
+</td>
+
+
+
+<td>
+
+{{ batch }}
+
+</td>
+
+
+
+
+<td>
+
+
+<div class="action-buttons">
+
+
+
+<!-- ================= EDIT BUTTON ================= -->
+
+
+<form action="{{ url_for('student_search') }}"
+
+method="POST">
+
+
+<input type="hidden"
+
+name="course"
+
+value="{{ course }}">
+
+
+
+<input type="hidden"
+
+name="batch"
+
+value="{{ batch }}">
+
+
+
+<input type="hidden"
+
+name="search_type"
+
+value="regno">
+
+
+
+<input type="hidden"
+
+name="keyword"
+
+value="{{ s.get('RegNo','') }}">
+
+
+
+<button type="submit"
+
+class="edit-btn">
+
+✏ Edit
+
+</button>
+
+
+</form>
+
+
+
+
+
+<!-- ================= DELETE BUTTON ================= -->
+
+
+<form action="{{ url_for('delete_student') }}"
+
+method="POST"
+
+onsubmit="return confirm('Delete {{ s.get('Name','') }} ?');">
+
+
+
+<input type="hidden"
+
+name="course"
+
+value="{{ course }}">
+
+
+
+<input type="hidden"
+
+name="batch"
+
+value="{{ batch }}">
+
+
+
+<input type="hidden"
+
+name="RegNo"
+
+value="{{ s.get('RegNo','') }}">
+
+
+
+<button type="submit"
+
+class="delete-btn">
+
+🗑 Delete
+
+</button>
+
+
+</form>
+
+
+
+
+</div>
+
+
+</td>
+
+
+</tr>
+
+
+
+{% endfor %}
+
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+{% else %}
+
+
+{% if not error %}
+
+<div class="no-data">
+
+No students found
+
+</div>
+
+{% endif %}
+
+
+{% endif %}
+
+
+
+
+
+<!-- ================= BOTTOM BUTTONS ================= -->
+
+
+<div class="buttons">
+
+
+<a href="{{ url_for('admin') }}">
+
+<button class="admin-btn">
+
+⚙ Admin Panel
+
+</button>
+
+</a>
+
+
+
+<a href="{{ url_for('home') }}">
+
+<button class="home-btn">
+
+🏠 Home
+
+</button>
+
+</a>
+
+
+
+</div>
+
+
+
+</div>
+
+
+</body>
+
+
+</html>

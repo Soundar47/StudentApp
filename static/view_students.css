@@ -1,0 +1,578 @@
+/* ==========================================
+   RESET
+========================================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    font-family:"Segoe UI", Arial, sans-serif;
+    background:#edf2f7;
+    color:#333;
+    line-height:1.5;
+}
+
+/* ==========================================
+   CONTAINER
+========================================== */
+
+.container{
+    width:min(95%,1300px);
+    margin:30px auto;
+    background:#fff;
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 8px 25px rgba(0,0,0,.12);
+}
+
+/* ==========================================
+   HEADINGS
+========================================== */
+
+h1{
+    text-align:center;
+    color:#0d47a1;
+    margin-bottom:30px;
+    font-size:clamp(28px,4vw,36px);
+}
+
+h2{
+    text-align:center;
+    color:#1565c0;
+    margin-bottom:25px;
+    font-size:clamp(22px,3vw,28px);
+}
+
+/* ==========================================
+   FORM
+========================================== */
+/* Main page form only */
+.container > form{
+    width:100%;
+    max-width:700px;
+    margin:auto;
+    background:#f8f9fb;
+    padding:30px;
+    border-radius:10px;
+    border:1px solid #ddd;
+}
+table form{
+    margin:0;
+    padding:0;
+    background:none;
+    border:none;
+    box-shadow:none;
+    max-width:none;
+    width:auto;
+}
+
+.form-group{
+    margin-bottom:20px;
+}
+
+.form-group label{
+    display:block;
+    margin-bottom:8px;
+    font-weight:600;
+    color:#444;
+}
+
+.form-group input,
+.form-group select{
+    width:100%;
+    padding:12px 15px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:16px;
+    transition:.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus{
+    outline:none;
+    border-color:#1565c0;
+    box-shadow:0 0 6px rgba(21,101,192,.25);
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+button{
+    transition:.3s;
+}
+
+form button{
+    display:block;
+    width:220px;
+    max-width:100%;
+    margin:20px auto 0;
+    padding:12px;
+    border:none;
+    border-radius:6px;
+    background:#1565c0;
+    color:#fff;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+form button:hover{
+    background:#0d47a1;
+}
+
+
+/* ==========================================
+   TABLE
+========================================== */
+
+.table-container{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    margin-top:20px;
+}
+
+table{
+    width:100%;
+    min-width:900px;
+    border-collapse:collapse;
+    background:#fff;
+}
+
+th{
+    background:#1565c0;
+    color:#fff;
+    padding:14px;
+    position:sticky;
+    top:0;
+    z-index:1;
+}
+
+td{
+    padding:12px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+
+tr:nth-child(even){
+    background:#f7f9fc;
+}
+
+tr:hover{
+    background:#e3f2fd;
+}
+
+/* ==========================================
+   ACTION BUTTONS
+========================================== */
+
+.action-buttons{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.edit-btn,
+.delete-btn{
+    padding:6px 12px;
+    min-width:70px;
+    height:34px;
+    font-size:14px;
+}
+.edit-btn{
+    background:#2e7d32;
+}
+
+.edit-btn:hover{
+    background:#1b5e20;
+}
+
+.delete-btn{
+    background:#d32f2f;
+}
+
+.delete-btn:hover{
+    background:#b71c1c;
+}
+
+/* ==========================================
+   ALERTS
+========================================== */
+
+.success,
+.error{
+    width:min(700px,100%);
+    margin:20px auto;
+    padding:15px;
+    border-radius:6px;
+    font-weight:bold;
+    text-align:center;
+}
+
+.success{
+    background:#e8f5e9;
+    color:#2e7d32;
+    border-left:5px solid #2e7d32;
+}
+
+.error{
+    background:#ffebee;
+    color:#c62828;
+    border-left:5px solid #c62828;
+}
+
+/* ==========================================
+   BOTTOM BUTTONS
+========================================== */
+
+.buttons{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-top:35px;
+    flex-wrap:wrap;
+}
+
+.buttons a{
+    text-decoration:none;
+}
+
+.buttons button{
+    width:180px;
+    max-width:100%;
+    padding:12px;
+    border:none;
+    border-radius:6px;
+    color:#fff;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.home-btn{
+    background:#1565c0;
+}
+
+.home-btn:hover{
+    background:#0d47a1;
+}
+
+.admin-btn{
+    background:#6a1b9a;
+}
+
+.admin-btn:hover{
+    background:#4a148c;
+}
+
+/* ==========================================
+   TABLET
+========================================== */
+
+@media (max-width:992px){
+
+.container{
+    padding:25px;
+}
+
+table{
+    min-width:800px;
+}
+
+}
+
+/* ==========================================
+   MOBILE
+========================================== */
+
+@media (max-width:768px){
+
+.container{
+    width:98%;
+    padding:15px;
+    margin:15px auto;
+}
+
+form{
+    padding:20px 15px;
+}
+
+.form-group input,
+.form-group select{
+    font-size:15px;
+    padding:11px;
+}
+
+form button{
+    width:100%;
+}
+
+.buttons{
+    flex-direction:column;
+    align-items:center;
+}
+
+.buttons button{
+    width:100%;
+}
+
+.action-buttons{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+}
+
+.action-buttons form{
+    margin:0;
+}
+
+.edit-btn,
+.delete-btn{
+    width:100%;
+}
+
+th,
+td{
+    padding:10px;
+    font-size:14px;
+}
+
+}
+
+/* ==========================================
+   SMALL MOBILE
+========================================== */
+
+@media (max-width:480px){
+
+.container{
+    padding:12px;
+}
+
+h1{
+    font-size:24px;
+}
+
+h2{
+    font-size:20px;
+}
+
+th,
+td{
+    font-size:13px;
+    padding:8px;
+}
+
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+::-webkit-scrollbar{
+    width:8px;
+    height:8px;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#1565c0;
+    border-radius:10px;
+}
+
+::-webkit-scrollbar-track{
+    background:#eee;
+}
+/* ==========================================
+   LINKS
+========================================== */
+
+a{
+    color:#1565c0;
+    text-decoration:none;
+    transition:.3s;
+}
+
+a:hover{
+    color:#0d47a1;
+    text-decoration:underline;
+}
+
+/* ==========================================
+   HORIZONTAL RULE
+========================================== */
+
+hr{
+    border:none;
+    border-top:1px solid #ddd;
+    margin:25px 0;
+}
+
+/* ==========================================
+   IMAGE
+========================================== */
+
+img{
+    max-width:100%;
+    height:auto;
+    display:block;
+}
+
+/* ==========================================
+   DISABLED ELEMENTS
+========================================== */
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+}
+
+/* ==========================================
+   READONLY INPUT
+========================================== */
+
+input[readonly],
+textarea[readonly]{
+    background:#f5f5f5;
+}
+
+/* ==========================================
+   REQUIRED FIELD
+========================================== */
+
+label.required::after{
+    content:" *";
+    color:#d32f2f;
+}
+
+/* ==========================================
+   PLACEHOLDER
+========================================== */
+
+::placeholder{
+    color:#999;
+    opacity:1;
+}
+
+/* ==========================================
+   TEXT SELECTION
+========================================== */
+
+::selection{
+    background:#1565c0;
+    color:#fff;
+}
+/* ==========================================
+   TEXT ALIGNMENT
+========================================== */
+
+.text-left{
+    text-align:left;
+}
+
+.text-center{
+    text-align:center;
+}
+
+.text-right{
+    text-align:right;
+}
+
+/* ==========================================
+   DISPLAY
+========================================== */
+
+.d-none{
+    display:none !important;
+}
+
+.d-block{
+    display:block !important;
+}
+
+.d-flex{
+    display:flex !important;
+}
+
+/* ==========================================
+   FLEX
+========================================== */
+
+.justify-center{
+    justify-content:center;
+}
+
+.align-center{
+    align-items:center;
+}
+
+/* ==========================================
+   WIDTH
+========================================== */
+
+.w-100{
+    width:100%;
+}
+
+/* ==========================================
+   MARGIN
+========================================== */
+
+.mt-10{margin-top:10px;}
+.mt-20{margin-top:20px;}
+.mt-30{margin-top:30px;}
+
+.mb-10{margin-bottom:10px;}
+.mb-20{margin-bottom:20px;}
+.mb-30{margin-bottom:30px;}
+
+/* ==========================================
+   PADDING
+========================================== */
+
+.p-10{padding:10px;}
+.p-20{padding:20px;}
+.p-30{padding:30px;}
+/* ==========================================
+   KEYBOARD ACCESSIBILITY
+========================================== */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible{
+
+    outline:3px solid rgba(21,101,192,.35);
+    outline-offset:2px;
+
+}
+
+/* ==========================================
+   SMOOTH TRANSITIONS
+========================================== */
+
+input,
+select,
+textarea,
+button{
+
+    transition:
+        background .3s,
+        color .3s,
+        border-color .3s,
+        box-shadow .3s,
+        transform .2s;
+
+}
