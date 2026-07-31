@@ -80,6 +80,63 @@ body{
     object-fit:cover;
 
 }
+/* ==========================
+   PHOTO BOX
+========================== */
+
+.photo-box{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:8px;
+
+}
+
+/* Hide Remove Photo by default */
+
+#removePhotoLabel{
+
+    display:none;
+
+    font-size:13px;
+
+    font-weight:bold;
+
+    color:#c62828;
+
+    cursor:pointer;
+
+    user-select:none;
+
+}
+
+/* Checkbox */
+
+#removePhotoLabel input{
+
+    width:auto;
+
+    margin-right:6px;
+
+    vertical-align:middle;
+
+}
+
+/* File Upload */
+
+#photoInput{
+
+    display:none;
+
+    width:110px;
+
+    font-size:12px;
+
+}
 
 /* ==========================
    TITLE
@@ -510,12 +567,11 @@ textarea:focus{
 
     outline:none;
 
-}
-/* ==========================
+}/* ==========================
    BUTTON BAR
 ========================== */
 
-.button-bar{
+.no-print{
 
     display:flex;
 
@@ -525,7 +581,7 @@ textarea:focus{
 
     gap:15px;
 
-    margin:25px 0;
+    margin:30px 0;
 
     flex-wrap:wrap;
 
@@ -535,11 +591,13 @@ textarea:focus{
    COMMON BUTTON
 ========================== */
 
-.button-bar button{
+.no-print button{
 
-    min-width:150px;
+    min-width:160px;
 
-    height:42px;
+    height:44px;
+
+    padding:0 20px;
 
     border:none;
 
@@ -549,7 +607,7 @@ textarea:focus{
 
     font-size:16px;
 
-    font-weight:600;
+    font-weight:bold;
 
     font-family:"Times New Roman", serif;
 
@@ -559,6 +617,101 @@ textarea:focus{
 
 }
 
+/* Change */
+
+#changeBtn{
+
+    background:#1976d2;
+
+}
+
+#changeBtn:hover{
+
+    background:#1259a7;
+
+}
+
+/* Save */
+
+#saveBtn{
+
+    background:#2e7d32;
+
+}
+
+#saveBtn:hover{
+
+    background:#1b5e20;
+
+}
+
+/* Print */
+
+.no-print button[onclick="printPage()"]{
+
+    background:#ef6c00;
+
+}
+
+.no-print button[onclick="printPage()"]:hover{
+
+    background:#d45b00;
+
+}
+
+/* Back */
+
+.back-btn{
+
+    background:#616161;
+
+}
+
+.back-btn:hover{
+
+    background:#424242;
+
+}
+
+/* Delete Student */
+
+form.no-print{
+
+    display:flex;
+
+    justify-content:center;
+
+    margin-top:15px;
+
+}
+
+form.no-print button{
+
+    background:#c62828;
+
+}
+
+form.no-print button:hover{
+
+    background:#8e0000;
+
+}
+
+/* Hover */
+
+.no-print button:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+
+}
+
+.no-print button:active{
+
+    transform:scale(.97);
+
+}
 /* Change */
 
 #changeBtn{

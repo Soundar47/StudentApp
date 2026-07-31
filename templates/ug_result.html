@@ -165,6 +165,10 @@ value="{{batch}}">
 name="RegNo"
 value="{{student.RegNo}}">
 
+<input type="hidden"
+       name="remove_photo"
+       id="remove_photo"
+       value="0">
 
 
 
@@ -206,9 +210,30 @@ PG & Research Department of Computer Science
 
 
 
-<img class="photo"
-src="{{ url_for('static',
-filename='photos/' + student.Photo) }}">
+<div class="photo-box">
+
+{% if student.Photo %}
+    <img class="photo"
+         src="{{ url_for('static', filename='photos/' + student.Photo) }}">
+{% else %}
+    <img class="photo"
+         src="{{ url_for('static', filename='photos/default.png') }}">
+{% endif %}
+
+<input type="file"
+       name="Photo"
+       id="photoInput"
+       accept="image/*"
+       style="display:none;">
+
+<button type="button"
+        id="removePhotoBtn"
+        style="display:none;"
+        onclick="removePhoto()">
+    🗑 Remove Photo
+</button>
+
+</div>
 
 
 
@@ -1752,9 +1777,21 @@ function enableEdit(){
     document.getElementById(
         "saveBtn"
     ).style.display="inline-block";
+    document.getElementById("photoInput").style.display = "inline-block";
+document.getElementById("removePhotoBtn").style.display = "inline-block";
 
 }
+function removePhoto(){
 
+    if(confirm("Remove this photo?")){
+
+        document.getElementById("remove_photo").value = "1";
+
+        document.querySelector(".photo").src =
+            "{{ url_for('static', filename='photos/default.png') }}";
+    }
+
+}
 </script>
 
 </body>

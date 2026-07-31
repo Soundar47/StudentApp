@@ -48,8 +48,6 @@ PHOTO_FOLDER = os.path.join(
     "photos"
 )
 
-
-
 os.makedirs(
     UG_FOLDER,
     exist_ok=True
@@ -66,7 +64,7 @@ os.makedirs(
     PHOTO_FOLDER,
     exist_ok=True)
 
-
+app.config["PHOTO_FOLDER"] = PHOTO_FOLDER
 
 
 # ==========================================
@@ -1024,93 +1022,74 @@ def save_new_student():
 # SAVE PG STUDENT EDIT
 # ==========================================
 
-@app.route(
-    "/save-pg",
-    methods=["POST"]
-)
+@app.route("/save-pg", methods=["POST"])
 def save_pg():
 
-
     if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
+        return redirect(url_for("admin_login"))
 
     course = request.form["course"].upper()
-
     batch = request.form["batch"].replace("-", "_")
-
     regno = request.form["RegNo"]
 
-
-    df = load_csv(
-        course,
-        batch
-    )
-
+    df = load_csv(course, batch)
 
     if df is None:
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-
-    # Find student
+        return redirect(url_for("admin"))
 
     index = df[
         df["RegNo"].astype(str) == regno
     ].index
 
-
-
     if len(index) == 0:
-
-        return redirect(
-            url_for("admin")
-        )
-
-
+        return redirect(url_for("admin"))
 
     row = index[0]
 
+    # Remove Photo
+    if request.form.get("remove_photo") == "1":
 
+        old_photo = df.loc[row, "Photo"]
+
+        if old_photo:
+
+            photo_path = os.path.join(PHOTO_FOLDER, old_photo)
+
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
+
+        df.loc[row, "Photo"] = ""
 
     # Update all fields
-
     for column in df.columns:
 
-
         if column in request.form:
+            df.loc[row, column] = request.form.get(column, "")
 
+    # Upload New Photo
+    if "Photo" in request.files:
 
-            df.loc[row,column] = request.form.get(
-                column,
-                ""
-            )
+        photo = request.files["Photo"]
 
+        if photo.filename != "":
 
+            if allowed_photo(photo.filename):
 
-    save_csv(
-        df,
-        course,
-        batch
-    )
+                ext = os.path.splitext(photo.filename)[1]
 
+                filename = regno + ext
 
+                photo.save(
+                    os.path.join(PHOTO_FOLDER, filename)
+                )
 
-    write_log(
-        f"Updated PG Student | {regno}"
-    )
+                df.loc[row, "Photo"] = filename
 
+    save_csv(df, course, batch)
 
+    write_log(f"Updated PG Student | {regno}")
 
     student = df.loc[row].to_dict()
-
-
 
     return render_template(
         "pg_result.html",
@@ -1123,102 +1102,74 @@ def save_pg():
 # SAVE UG STUDENT EDIT
 # ==========================================
 
-@app.route(
-    "/save-ug",
-    methods=["POST"]
-)
+@app.route("/save-ug", methods=["POST"])
 def save_ug():
 
-
     if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
+        return redirect(url_for("admin_login"))
 
     course = request.form["course"].upper()
-
-
-    batch = request.form["batch"].replace(
-        "-",
-        "_"
-    )
-
-
+    batch = request.form["batch"].replace("-", "_")
     regno = request.form["RegNo"]
 
-
-
-    df = load_csv(
-        course,
-        batch
-    )
-
+    df = load_csv(course, batch)
 
     if df is None:
-
-        return redirect(
-            url_for("admin")
-        )
-
-
-
-    # Find student row
+        return redirect(url_for("admin"))
 
     student_index = df[
-        df["RegNo"].astype(str)
-        ==
-        regno
+        df["RegNo"].astype(str) == regno
     ].index
 
-
-
     if len(student_index) == 0:
-
-
-        return redirect(
-            url_for("admin")
-        )
-
-
+        return redirect(url_for("admin"))
 
     row = student_index[0]
 
+    # Remove Photo
+    if request.form.get("remove_photo") == "1":
 
+        old_photo = df.loc[row, "Photo"]
+
+        if old_photo:
+
+            photo_path = os.path.join(PHOTO_FOLDER, old_photo)
+
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
+
+        df.loc[row, "Photo"] = ""
 
     # Update values
-
     for column in df.columns:
 
-
         if column in request.form:
+            df.loc[row, column] = request.form.get(column, "")
 
+    # Upload New Photo
+    if "Photo" in request.files:
 
-            df.loc[row,column] = request.form.get(
-                column,
-                ""
-            )
+        photo = request.files["Photo"]
 
+        if photo.filename != "":
 
+            if allowed_photo(photo.filename):
 
-    save_csv(
-        df,
-        course,
-        batch
-    )
+                ext = os.path.splitext(photo.filename)[1]
 
+                filename = regno + ext
 
+                photo.save(
+                    os.path.join(PHOTO_FOLDER, filename)
+                )
 
-    write_log(
-        f"Updated UG Student | {regno}"
-    )
+                df.loc[row, "Photo"] = filename
 
+    save_csv(df, course, batch)
 
+    write_log(f"Updated UG Student | {regno}")
 
     student = df.loc[row].to_dict()
-
-
 
     return render_template(
         "ug_result.html",
@@ -1227,7 +1178,6 @@ def save_ug():
         batch=batch,
         message="Student details updated successfully"
     )
-
 # ==========================================
 # ACTIVITY LOG
 # ==========================================
