@@ -177,8 +177,20 @@
                 </button>
             </a>
 
-        </div>
+       </div>
+       <div class="card">
 
+            <h2>➕📁</h2>
+
+            <h3>Add New Batch</h3>
+
+            <p>Create a new UG / PG batch.</p>
+
+            <button onclick="showSection('add_batch')">
+            Open
+            </button>
+
+        </div>
 
         <div class="card">
 
@@ -218,18 +230,17 @@
     </div>
 
     <!-- ================= ALERT ================= -->
+{% with messages = get_flashed_messages(with_categories=true) %}
 
-    {% if message %}
-    <div class="alert success">
-        {{ message }}
-    </div>
-    {% endif %}
+{% for category, message in messages %}
 
-    {% if error %}
-    <div class="alert error">
-        {{ error }}
-    </div>
-    {% endif %}
+<div class="alert {{category}}">
+    {{ message }}
+</div>
+
+{% endfor %}
+
+{% endwith %}
     <!-- ==========================================
             UPLOAD STUDENT DATA
     =========================================== -->
@@ -312,9 +323,7 @@
                 <option value="PG">PG</option>
 
             </select>
-
-
-            <label>Existing Batch</label>
+            <label>Existing Batch/label>
 
             <select name="batch"
                     id="batch_list"
@@ -394,8 +403,38 @@
 
     </div>
 
+ <!-- ==========================================
+       ADD NEW BATCH         
+=========================================== -->
+    <div id="add_batch" class="section" style="display:none;">
+
+        <h2>➕ Add New Batch</h2>
+
+        <form action="{{ url_for('add_batch') }}" method="POST">
+
+            <label>Course</label>
+
+            <select name="course">
+                <option value="UG">UG</option>
+                <option value="PG">PG</option>
+            </select>
 
 
+            <label>Batch</label>
+
+            <input 
+            type="text"
+            name="batch"
+            placeholder="Example: 2027-2030"
+            required>
+
+
+            <button type="submit">
+                Create Batch
+            </button>
+
+        </form>
+    </div>
     <!-- ==========================================
                 STUDENT SEARCH
     =========================================== -->

@@ -1652,23 +1652,14 @@ onclick="printPage()">
 
 </button>
 
-
-
-<a href="{{url_for('home')}}">
-
-<button type="button">
-
-← Back Home
-
+<button 
+    type="button"
+    onclick="history.back()" 
+    class="back-btn">
+    ← Back Home
 </button>
 
-</a>
-
-
 </div>
-
-
-
 
 </form>
 
@@ -1711,16 +1702,7 @@ style="background:red;color:white;">
 
 </form>
 
-
-
-
-
 </div>
-
-
-
-
-
 
 
 <script>
@@ -1731,9 +1713,6 @@ function printPage(){
 window.print();
 
 }
-
-
-
 
 window.onload=function(){
 
@@ -1752,19 +1731,12 @@ e.style.pointerEvents="none";
 
 }
 
-
 });
-
 
 }
 
 
-
-
-
 function enableEdit(){
-
-
 
 document.querySelectorAll(
 "#studentForm input,#studentForm textarea"
@@ -1785,27 +1757,17 @@ e.style.pointerEvents="auto";
 
 });
 
-
-
 document.getElementById(
 "changeBtn"
 ).style.display="none";
-
-
 
 document.getElementById(
 "saveBtn"
 ).style.display="inline-block";
 
-
-
 }
 
-
-
 </script>
-
-
 
 </body>
 

@@ -1615,14 +1615,7 @@ style="display:none;">
 
 
 💾 Save Changes
-
-
 </button>
-
-
-
-
-
 
 <button
 type="submit"
@@ -1641,12 +1634,6 @@ color:white;
 
 </button>
 
-
-
-
-
-
-
 <button
 type="button"
 onclick="printPage()">
@@ -1657,39 +1644,19 @@ onclick="printPage()">
 
 </button>
 
-
-
-
-
-
-<a href="{{url_for('home')}}">
-
-<button
-type="button">
-
-← Back Home
-
+<button 
+    type="button"
+    onclick="history.back()" 
+    class="back-btn">
+    ← Back Home
 </button>
-
-
-</a>
-
-
-
-
 </div>
-
-
-
 
 </form>
 
 
 </div>
 </div>
-
-
-
 
 
 <script>
@@ -1705,11 +1672,6 @@ function printPage(){
     window.print();
 
 }
-
-
-
-
-
 
 
 // ===============================
@@ -1750,17 +1712,7 @@ window.onload=function(){
 
     });
 
-
-
 };
-
-
-
-
-
-
-
-
 
 // ===============================
 // ENABLE EDIT MODE
@@ -1775,8 +1727,6 @@ function enableEdit(){
     document.querySelectorAll(
         "#studentForm input[name], #studentForm textarea"
     );
-
-
 
     fields.forEach(function(field){
 
@@ -1795,31 +1745,17 @@ function enableEdit(){
 
     });
 
-
-
-
     document.getElementById(
         "changeBtn"
     ).style.display="none";
-
-
 
     document.getElementById(
         "saveBtn"
     ).style.display="inline-block";
 
-
-
 }
 
-
-
-
-
 </script>
-
-
-
 
 </body>
 

@@ -8,15 +8,21 @@
     box-sizing:border-box;
 }
 
+
 /* ==========================================
    BODY
 ========================================== */
 
 body{
+
     font-family:"Times New Roman", serif;
+
     background:#eef2f7;
+
     color:#222;
+
 }
+
 
 /* ==========================================
    CONTAINER
@@ -25,10 +31,12 @@ body{
 .container{
 
     width:90%;
+
     max-width:1000px;
+
     margin:40px auto;
 
-    background:#fff;
+    background:#ffffff;
 
     padding:30px;
 
@@ -37,6 +45,7 @@ body{
     box-shadow:0 8px 20px rgba(0,0,0,.15);
 
 }
+
 
 /* ==========================================
    TITLE
@@ -54,8 +63,9 @@ h2{
 
 }
 
+
 /* ==========================================
-   SEARCH INFO
+   SEARCH INFORMATION
 ========================================== */
 
 .search-info{
@@ -72,8 +82,9 @@ h2{
 
 }
 
+
 /* ==========================================
-   TABLE CONTAINER
+   TABLE WRAPPER
 ========================================== */
 
 .table-container{
@@ -83,6 +94,7 @@ h2{
     overflow-x:auto;
 
 }
+
 
 /* ==========================================
    TABLE
@@ -98,11 +110,14 @@ table{
 
 }
 
+
+/* TABLE HEADER */
+
 table th{
 
     background:#1565c0;
 
-    color:#fff;
+    color:white;
 
     padding:12px;
 
@@ -111,6 +126,9 @@ table th{
     font-size:18px;
 
 }
+
+
+/* TABLE DATA */
 
 table td{
 
@@ -124,11 +142,17 @@ table td{
 
 }
 
+
+/* ALTERNATE ROW */
+
 table tr:nth-child(even){
 
     background:#f7f7f7;
 
 }
+
+
+/* HOVER EFFECT */
 
 table tr:hover{
 
@@ -136,8 +160,9 @@ table tr:hover{
 
 }
 
+
 /* ==========================================
-   BUTTON FORM
+   FORM
 ========================================== */
 
 form{
@@ -152,8 +177,9 @@ form{
 
 }
 
+
 /* ==========================================
-   BUTTON
+   VIEW BUTTON
 ========================================== */
 
 button{
@@ -164,7 +190,7 @@ button{
 
     background:#2e7d32;
 
-    color:#fff;
+    color:white;
 
     border:none;
 
@@ -180,6 +206,7 @@ button{
 
 }
 
+
 button:hover{
 
     background:#1b5e20;
@@ -188,11 +215,12 @@ button:hover{
 
 }
 
+
 /* ==========================================
    BACK BUTTON
 ========================================== */
 
-.back{
+.back-btn{
 
     display:block;
 
@@ -200,26 +228,38 @@ button:hover{
 
     margin:30px auto 0;
 
-    text-decoration:none;
-
-}
-
-.back button{
-
-    width:100%;
+    padding:10px 20px;
 
     background:#ef6c00;
 
+    color:white;
+
+    border:none;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    transition:.3s;
+
 }
 
-.back button:hover{
+
+.back-btn:hover{
 
     background:#d84315;
 
+    transform:scale(1.05);
+
 }
 
+
 /* ==========================================
-   NO RECORD
+   NO RECORD MESSAGE
 ========================================== */
 
 .no-record{
@@ -236,11 +276,13 @@ button:hover{
 
 }
 
+
 /* ==========================================
-   RESPONSIVE
+   RESPONSIVE DESIGN
 ========================================== */
 
 @media(max-width:768px){
+
 
 .container{
 
@@ -248,7 +290,10 @@ button:hover{
 
     padding:20px;
 
+    margin:20px auto;
+
 }
+
 
 h2{
 
@@ -256,23 +301,20 @@ h2{
 
 }
 
+
 .search-info{
 
     font-size:16px;
 
 }
 
-.table-container{
-
-    overflow-x:auto;
-
-}
 
 table{
 
     min-width:650px;
 
 }
+
 
 table th,
 table td{
@@ -283,25 +325,82 @@ table td{
 
 }
 
+
 button{
+
+    min-width:80px;
 
     font-size:14px;
 
 }
 
+
+.back-btn{
+
+    width:170px;
+
+    font-size:14px;
+
 }
 
+
+}
+
+
 /* ==========================================
-   PRINT
+   SMALL MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+
+.container{
+
+    padding:15px;
+
+}
+
+
+h2{
+
+    font-size:22px;
+
+}
+
+
+table th,
+table td{
+
+    padding:8px;
+
+    font-size:13px;
+
+}
+
+
+.back-btn{
+
+    width:150px;
+
+}
+
+
+}
+
+
+/* ==========================================
+   PRINT STYLE
 ========================================== */
 
 @media print{
 
+
 body{
 
-    background:#fff;
+    background:white;
 
 }
+
 
 .container{
 
@@ -311,13 +410,24 @@ body{
 
 }
 
-button{
+
+button,
+.back-btn{
 
     display:none;
 
 }
 
+
+table{
+
+    min-width:100%;
+
 }
+
+
+}
+
 
 /* ==========================================
    SCROLLBAR
@@ -331,11 +441,13 @@ button{
 
 }
 
+
 ::-webkit-scrollbar-track{
 
     background:#eeeeee;
 
 }
+
 
 ::-webkit-scrollbar-thumb{
 
@@ -344,6 +456,7 @@ button{
     border-radius:10px;
 
 }
+
 
 ::-webkit-scrollbar-thumb:hover{
 

@@ -6,6 +6,7 @@ from flask import (
     url_for,
     session
 )
+from flask import flash
 
 from datetime import datetime
 
@@ -14,8 +15,6 @@ import json
 import pandas as pd
 
 from werkzeug.utils import secure_filename
-
-
 
 # ==========================================
 # FLASK APP
@@ -513,6 +512,11 @@ def create_empty_batch(course,batch):
     )
 
 
+    # Already batch exists
+    if os.path.exists(path):
+        return False
+
+
     columns = (
         UG_COLUMNS
         if course=="UG"
@@ -532,9 +536,7 @@ def create_empty_batch(course,batch):
     )
 
 
-
-
-
+    return True
 # ==========================================
 # ADMIN LOGIN
 # ==========================================
@@ -679,21 +681,16 @@ def home():
 
 @app.route("/admin")
 def admin():
-
-
+        
     if not session.get("admin"):
 
         return redirect(
             url_for("admin_login")
         )
 
-
-
     ug_batches=[]
 
     pg_batches=[]
-
-
 
     for file in os.listdir(UG_FOLDER):
 
@@ -860,12 +857,6 @@ def upload_data():
     return redirect(
         url_for("admin")
     )
-
-
-
-
-
-
 
 # ==========================================
 # ADD STUDENT PAGE
@@ -1236,101 +1227,7 @@ def save_ug():
         batch=batch,
         message="Student details updated successfully"
     )
-# ==========================================
-# UG SEARCH
-# ==========================================
 
-@app.route("/ug-search", methods=["POST"])
-def ug_search():
-
-    batch = request.form["batch"]
-
-    regno = request.form["RegNo"].strip()
-
-
-    df = load_csv(
-        "UG",
-        batch
-    )
-
-
-    if df is None:
-        return "UG Batch Not Found"
-
-
-    student = df[
-        df["RegNo"].astype(str) == regno
-    ]
-
-
-    if student.empty:
-
-        return render_template(
-            "index.html",
-            error="Student Not Found"
-        )
-
-
-    data = student.iloc[0].to_dict()
-
-
-    return render_template(
-        "ug_result.html",
-        student=data,
-        course="UG",
-        batch=batch
-    )
-# ==========================================
-# PG SEARCH
-# ==========================================
-
-@app.route("/pg-search", methods=["POST"])
-def pg_search():
-
-    batch=request.form["batch"]
-
-    regno=request.form["RegNo"].strip()
-
-
-
-    df=load_csv(
-        "PG",
-        batch
-    )
-
-
-    if df is None:
-
-        return "PG Batch Not Found"
-
-
-
-    student=df[
-        df["RegNo"].astype(str)==regno
-    ]
-
-
-
-    if student.empty:
-
-
-        return render_template(
-            "index.html",
-            error="Student Not Found"
-        )
-
-
-
-    data=student.iloc[0].to_dict()
-
-
-
-    return render_template(
-        "pg_result.html",
-        student=data,
-        course="PG",
-        batch=batch
-    )
 # ==========================================
 # ACTIVITY LOG
 # ==========================================
@@ -1698,9 +1595,42 @@ def delete_batch():
 
     return redirect(url_for("admin"))
 # ==========================================
+# ADD BATCHES
+# ==========================================
+@app.route("/add-batch", methods=["POST"])
+def add_batch():
+
+    if not session.get("admin"):
+        return redirect(url_for("admin_login"))
+
+
+    course = request.form["course"].upper()
+
+    batch = request.form["batch"].strip()
+    batch = batch.replace("-", "_")
+
+
+    result = create_empty_batch(course,batch)
+    if result:
+
+        flash(
+            f"{course} {batch} Batch Created Successfully",
+            "success"
+        )
+
+    else:
+
+        flash(
+            "Failed to create batch",
+            "error"
+        )
+
+    return redirect(
+        url_for("admin")
+    )
+# ==========================================
 # STUDENT SEARCH
 # ==========================================
-
 @app.route("/student-search", methods=["POST"])
 def student_search():
 
@@ -1714,30 +1644,48 @@ def student_search():
     if df is None:
         return redirect(url_for("admin"))
 
+    # Register Number Search
     if search_type == "regno":
+
         student = df[df["RegNo"].astype(str) == keyword]
-    else:
-        student = df[df["Name"].astype(str).str.contains(keyword, case=False, na=False)]
 
-    if student.empty:
+        if student.empty:
+            return render_template(
+                "admin.html",
+                error="Student Not Found"
+            )
+
+        data = student.iloc[0].to_dict()
+
+        if course == "UG":
+            return render_template(
+                "ug_result.html",
+                student=data,
+                course=course,
+                batch=batch
+            )
+
         return render_template(
-            "admin.html",
-            error="Student Not Found"
-        )
-
-    data = student.iloc[0].to_dict()
-
-    if course == "UG":
-        return render_template(
-            "ug_result.html",
+            "pg_result.html",
             student=data,
             course=course,
             batch=batch
         )
 
+    # Name Search
+    students = df[
+        df["Name"].astype(str).str.contains(keyword, case=False, na=False)
+    ]
+
+    if students.empty:
+        return render_template(
+            "admin.html",
+            error="Student Not Found"
+        )
+
     return render_template(
-        "pg_result.html",
-        student=data,
+        "name_result.html",
+        students=students.to_dict(orient="records"),
         course=course,
         batch=batch
     )
