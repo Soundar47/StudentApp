@@ -1222,52 +1222,107 @@ tbody tr:hover{
     }
 
 }
-
 /* ==========================================
-   MOBILE MENU
+   MOBILE SIDEBAR + CONTENT
 ========================================== */
 
 @media(max-width:768px){
 
     .main-container{
 
-        display:block;
+        display:flex;
+
+        flex-direction:row;
 
     }
+
+
+    /* LEFT SIDEBAR */
 
     .sidebar{
 
-        position:relative;
+        position:fixed;
 
-        width:100%;
+        left:0;
 
-        height:auto;
+        top:0;
 
-        padding-bottom:20px;
+        width:180px;
 
-    }
+        height:100vh;
 
-    .content{
-
-        margin-left:0;
-
-        width:100%;
-
-        padding:20px;
+        overflow-y:auto;
 
     }
+
 
     .logo{
 
-        padding:20px;
+        padding:20px 10px;
 
     }
+
+
+    .logo h2{
+
+        font-size:22px;
+
+    }
+
+
+    .logo p{
+
+        font-size:12px;
+
+    }
+
 
     .nav-btn{
 
-        padding:14px;
+        padding:12px;
+
+        font-size:13px;
 
     }
+
+
+    .logout{
+
+        font-size:13px;
+
+        padding:10px;
+
+    }
+
+
+
+    /* RIGHT CONTENT */
+
+    .content{
+
+        margin-left:180px;
+
+        width:calc(100% - 180px);
+
+        padding:15px;
+
+    }
+
+
+
+    .topbar{
+
+        padding:15px;
+
+    }
+
+
+    .topbar h1{
+
+        font-size:20px;
+
+    }
+
 
     .dashboard-grid{
 
@@ -1275,11 +1330,13 @@ tbody tr:hover{
 
     }
 
+
     .stats-grid{
 
         grid-template-columns:1fr;
 
     }
+
 
     .profile-card{
 
@@ -1291,71 +1348,52 @@ tbody tr:hover{
 
 }
 
-/* ==========================================
-   SMALL MOBILE
-========================================== */
+
+/* SMALL PHONE */
 
 @media(max-width:480px){
 
+    .sidebar{
+
+        width:120px;
+
+    }
+
+
     .content{
 
-        padding:15px;
+        margin-left:120px;
 
-    }
-
-    .topbar{
-
-        padding:18px;
-
-    }
-
-    .topbar h1{
-
-        font-size:22px;
-
-    }
-
-    .page h2{
-
-        font-size:24px;
-
-    }
-
-    .form-box{
-
-        padding:18px;
-
-    }
-
-    .box{
-
-        padding:20px;
-
-    }
-
-    table{
-
-        font-size:13px;
-
-    }
-
-    th,
-    td{
+        width:calc(100% - 120px);
 
         padding:10px;
 
     }
 
-    .student-photo{
 
-        width:60px;
+    .logo h2{
 
-        height:60px;
+        font-size:16px;
+
+    }
+
+
+    .nav-btn{
+
+        font-size:12px;
+
+        padding:10px 5px;
+
+    }
+
+
+    .page h2{
+
+        font-size:20px;
 
     }
 
 }
-
 /* ==========================================
    SCROLLBAR
 ========================================== */
