@@ -763,25 +763,134 @@ tr:hover{
 }
 
 
+/* ==========================================
+   MOBILE SIDEBAR STYLE
+========================================== */
 
-/* MOBILE */
 @media(max-width:768px){
 
     .main-container{
+
         display:flex;
+
         flex-direction:row;
+
     }
+
 
     .sidebar{
+
         position:fixed;
-        width:80px;
+
+        left:0;
+
+        top:0;
+
+        width:90px;
+
         height:100vh;
+
+        overflow-y:auto;
+
+        z-index:1000;
+
     }
 
-    .content{
-        margin-left:80px;
-        width:calc(100% - 80px);
+
+    .logo{
+
+        padding:15px 5px;
+
     }
+
+
+    .logo h2{
+
+        font-size:18px;
+
+    }
+
+
+    .logo p{
+
+        display:none;
+
+    }
+
+
+    .nav-btn{
+
+        padding:15px 5px;
+
+        font-size:0;
+
+        text-align:center;
+
+    }
+
+
+    .nav-btn::before{
+
+        content:"☰";
+
+        font-size:20px;
+
+    }
+
+
+    .logout{
+
+        width:70px;
+
+        margin:20px auto;
+
+        font-size:0;
+
+    }
+
+
+    .logout::before{
+
+        content:"⏻";
+
+        font-size:22px;
+
+    }
+
+
+    /* CONTENT */
+
+    .content{
+
+        margin-left:90px;
+
+        width:calc(100% - 90px);
+
+        padding:15px;
+
+    }
+
+
+    .topbar{
+
+        padding:15px;
+
+    }
+
+
+    .dashboard-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+
+    .stats-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
 
 }
 
