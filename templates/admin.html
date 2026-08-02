@@ -8,90 +8,121 @@
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
-    <title>Admin Panel</title>
+    <title>Admin Panel · SMS</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet"
-          href="{{ url_for('static', filename='admin.css') }}">
+      href="{{ url_for('static', filename='admin.css') }}">
 
 </head>
 
 <body>
 
-<div class="main-container">
+<div class="app-shell">
+
+    <!-- ==========================
+            OVERLAY (mobile only)
+    =========================== -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
     <!-- ==========================
             SIDEBAR
     =========================== -->
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
 
-        <div class="logo">
+        <div class="sidebar-brand">
 
-            <h2>🎓 SMS</h2>
+            <span class="brand-seal" aria-hidden="true">SMS</span>
 
-            <p>Student Management System</p>
+            <div class="brand-text">
+                <h2>Student Management</h2>
+                <p>Administration Console</p>
+            </div>
 
         </div>
 
-        <button class="nav-btn active"
-                onclick="showPage('dashboard',this)">
-            📊 Dashboard
-        </button>
+        <nav class="sidebar-nav" aria-label="Primary">
 
-        <button class="nav-btn"
-                onclick="showPage('upload',this)">
-            📁 Upload Data
-        </button>
+            <p class="nav-group-label">Overview</p>
 
-        <button class="nav-btn"
-                onclick="showPage('add_student',this)">
-            ➕ Add Student
-        </button>
-
-        <button class="nav-btn"
-                onclick="showPage('student_search',this)">
-            🔍 Student Search
-        </button>
-
-        <button class="nav-btn"
-                onclick="showPage('add_batch',this)">
-            ➕ New Batch
-        </button>
-
-        <button class="nav-btn"
-                onclick="showPage('delete_batch',this)">
-            🗑 Delete Batch
-        </button>
-
-        <a href="{{ url_for('view_students') }}">
-            <button class="nav-btn">
-                👨‍🎓 Student Management
+            <button class="nav-btn active" onclick="showPage('dashboard', this)">
+                <i class="icon" aria-hidden="true">◱</i>
+                <span>Dashboard</span>
             </button>
-        </a>
 
-        <a href="{{ url_for('activity_log') }}">
-            <button class="nav-btn">
-                📜 Activity Log
-            </button>
-        </a>
+            <p class="nav-group-label">Records</p>
 
-        <a href="{{ url_for('timetable') }}">
-            <button class="nav-btn">
-                📅 Timetable
+            <button class="nav-btn" onclick="showPage('upload', this)">
+                <i class="icon" aria-hidden="true">⇧</i>
+                <span>Upload Data</span>
             </button>
-        </a>
 
-        <a href="{{ url_for('change_password') }}">
-            <button class="nav-btn">
-                🔑 Change Password
+            <button class="nav-btn" onclick="showPage('add_student', this)">
+                <i class="icon" aria-hidden="true">＋</i>
+                <span>Add Student</span>
             </button>
-        </a>
 
-        <a href="{{ url_for('logout') }}">
-            <button class="logout">
-                🚪 Logout
+            <button class="nav-btn" onclick="showPage('student_search', this)">
+                <i class="icon" aria-hidden="true">⌕</i>
+                <span>Student Search</span>
             </button>
-        </a>
+
+            <p class="nav-group-label">Batches</p>
+
+            <button class="nav-btn" onclick="showPage('add_batch', this)">
+                <i class="icon" aria-hidden="true">＋</i>
+                <span>New Batch</span>
+            </button>
+
+            <button class="nav-btn" onclick="showPage('delete_batch', this)">
+                <i class="icon" aria-hidden="true">−</i>
+                <span>Delete Batch</span>
+            </button>
+
+            <a href="{{ url_for('view_students') }}" class="nav-link">
+                <button class="nav-btn" type="button">
+                    <i class="icon" aria-hidden="true">☰</i>
+                    <span>Student Management</span>
+                </button>
+            </a>
+
+            <p class="nav-group-label">System</p>
+
+            <a href="{{ url_for('activity_log') }}" class="nav-link">
+                <button class="nav-btn" type="button">
+                    <i class="icon" aria-hidden="true">≡</i>
+                    <span>Activity Log</span>
+                </button>
+            </a>
+
+            <a href="{{ url_for('timetable') }}" class="nav-link">
+                <button class="nav-btn" type="button">
+                    <i class="icon" aria-hidden="true">▤</i>
+                    <span>Timetable</span>
+                </button>
+            </a>
+
+            <a href="{{ url_for('change_password') }}" class="nav-link">
+                <button class="nav-btn" type="button">
+                    <i class="icon" aria-hidden="true">⚿</i>
+                    <span>Change Password</span>
+                </button>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}" class="nav-link">
+                <button class="logout-btn" type="button">
+                    <i class="icon" aria-hidden="true">⏻</i>
+                    <span>Logout</span>
+                </button>
+            </a>
+        </div>
 
     </aside>
 
@@ -99,490 +130,385 @@
             CONTENT
     =========================== -->
 
-    <main class="content">
+    <div class="content-wrap">
 
         <header class="topbar">
 
-            <div>
+            <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()" aria-label="Toggle navigation" aria-expanded="false" aria-controls="sidebar">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
 
+            <div class="topbar-heading">
                 <h1>Admin Dashboard</h1>
-
-                <p>
-                    Welcome, Administrator
-                </p>
-
+                <p>Welcome back, Administrator</p>
             </div>
 
-            <a href="{{ url_for('home') }}">
-
-                <button class="home-btn">
-
-                    🏠 Home
-
+            <a href="{{ url_for('home') }}" class="nav-link">
+                <button class="home-btn" type="button">
+                    <i class="icon" aria-hidden="true">⌂</i>
+                    <span>Home</span>
                 </button>
-
             </a>
 
         </header>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
 
-        {% for category, message in messages %}
+        <main class="content">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-            <div class="alert {{ category }}">
-                {{ message }}
-            </div>
-
-        {% endfor %}
-
-    {% endif %}
-        {% endwith %}
-        <!-- ==========================================
-                    DASHBOARD
-        ========================================== -->
-
-        <section id="dashboard" class="page active-page">
-
-            <h2>📊 Dashboard</h2>
-
-            <!-- Statistics -->
-
-            <div class="stats-grid">
-
-                <div class="stat-card">
-
-                    <h3>{{ total_students }}</h3>
-
-                    <p>Total Students</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3>{{ total_ug_students }}</h3>
-
-                    <p>UG Students</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3>{{ total_pg_students }}</h3>
-
-                    <p>PG Students</p>
-
-                </div>
-
-                <div class="stat-card">
-
-                    <h3>{{ total_batches }}</h3>
-
-                    <p>Total Batches</p>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- Recent Information -->
-
-            <div class="dashboard-row">
-
-                <div class="dashboard-box">
-
-                    <h3>📌 Recent Information</h3>
-
-                    <table class="info-table">
-
-                        <tr>
-
-                            <td>Latest Uploaded Batch</td>
-
-                            <td>{{ latest_batch }}</td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>Total UG Batches</td>
-
-                            <td>{{ total_ug_batches }}</td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>Total PG Batches</td>
-
-                            <td>{{ total_pg_batches }}</td>
-
-                        </tr>
-
-                        <tr>
-
-                            <td>Last Login</td>
-
-                            <td>{{ last_login }}</td>
-
-                        </tr>
-
-                    </table>
-
-                </div>
-
-
-
-                <!-- Recent Activity -->
-
-                <div class="dashboard-box">
-
-                    <h3>📜 Recent Activities</h3>
-
-                    <ul class="activity-list">
-
-                        {% if recent_logs %}
-
-                            {% for log in recent_logs %}
-
-                            <li>{{ log }}</li>
-
-                            {% endfor %}
-
-                        {% else %}
-
-                            <li>No Recent Activity</li>
-
-                        {% endif %}
-
-                    </ul>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- Quick Summary -->
-
-            <div class="dashboard-row">
-
-                <div class="dashboard-box">
-
-                    <h3>🎓 Courses</h3>
-
-                    <p><strong>UG :</strong> {{ total_ug_students }} Students</p>
-
-                    <p><strong>PG :</strong> {{ total_pg_students }} Students</p>
-
-                </div>
-
-
-
-                <div class="dashboard-box">
-
-                    <h3>📂 Batch Summary</h3>
-
-                    <p><strong>UG Batches :</strong> {{ total_ug_batches }}</p>
-
-                    <p><strong>PG Batches :</strong> {{ total_pg_batches }}</p>
-
-                </div>
-
-
-
-                <div class="dashboard-box">
-
-                    <h3>⚡ Quick Actions</h3>
-
-                    <p>✔ Upload Student Data</p>
-
-                    <p>✔ Search Students</p>
-
-                    <p>✔ Manage Batches</p>
-
-                </div>
-
-            </div>
-
-        </section>  
             <!-- ==========================================
-                    UPLOAD DATA
-        =========================================== -->
+                        DASHBOARD
+            ========================================== -->
 
-        <section id="upload" class="page">
+            <section id="dashboard" class="page active-page">
 
-            <h2>Upload Student Data</h2>
+                <div class="page-heading">
+                    <h2>Dashboard</h2>
+                    <p>A snapshot of your institution's records</p>
+                </div>
 
-            <form action="{{ url_for('upload_data') }}"
-                  method="POST"
-                  enctype="multipart/form-data"
-                  class="form-box">
+                <!-- Statistics -->
 
-                <div class="input-group">
+                <div class="stats-grid">
 
-                    <label>Course</label>
+                    <div class="stat-card">
+                        <span class="stat-label">Total Students</span>
+                        <span class="stat-value">{{ total_students }}</span>
+                    </div>
 
-                    <select name="course" required>
+                    <div class="stat-card">
+                        <span class="stat-label">UG Students</span>
+                        <span class="stat-value">{{ total_ug_students }}</span>
+                    </div>
 
-                        <option value="">Select Course</option>
-                        <option value="UG">UG</option>
-                        <option value="PG">PG</option>
+                    <div class="stat-card">
+                        <span class="stat-label">PG Students</span>
+                        <span class="stat-value">{{ total_pg_students }}</span>
+                    </div>
 
-                    </select>
+                    <div class="stat-card">
+                        <span class="stat-label">Total Batches</span>
+                        <span class="stat-value">{{ total_batches }}</span>
+                    </div>
 
                 </div>
 
-                <div class="input-group">
+                <!-- Recent Information -->
 
-                    <label>Batch</label>
+                <div class="dashboard-row">
 
-                    <input type="text"
-                           name="batch"
-                           placeholder="Example : 2025_2028"
-                           required>
+                    <div class="dashboard-box">
 
-                </div>
+                        <h3>Recent Information</h3>
 
-                <div class="upload-box">
+                        <table class="info-table">
+                            <tbody>
+                                <tr>
+                                    <td>Latest Uploaded Batch</td>
+                                    <td>{{ latest_batch }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Total UG Batches</td>
+                                    <td>{{ total_ug_batches }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Total PG Batches</td>
+                                    <td>{{ total_pg_batches }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Last Login</td>
+                                    <td>{{ last_login }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-                    <h3>Upload CSV / Excel File</h3>
+                    </div>
 
-                    <p>
+                    <!-- Recent Activity -->
 
-                        Supported Formats :
-                        CSV, XLS, XLSX
+                    <div class="dashboard-box">
 
-                    </p>
+                        <h3>Recent Activities</h3>
 
-                    <input type="file"
-                           name="datafile"
-                           accept=".csv,.xls,.xlsx">
+                        <ul class="activity-list">
+                            {% if recent_logs %}
+                                {% for log in recent_logs %}
+                                    <li>{{ log }}</li>
+                                {% endfor %}
+                            {% else %}
+                                <li class="empty-state">No recent activity yet</li>
+                            {% endif %}
+                        </ul>
 
-                </div>
-
-                <div class="info">
-
-                    Leave the file empty if you only
-                    want to create a new batch.
-
-                </div>
-
-                <button
-                    type="submit"
-                    class="primary-btn">
-
-                    📤 Upload Data
-
-                </button>
-
-            </form>
-
-        </section>
-
-
-
-        <!-- ==========================================
-                    ADD STUDENT
-        =========================================== -->
-
-        <section
-            id="add_student"
-            class="page">
-
-            <h2>Add Student</h2>
-
-            <form
-                action="{{ url_for('add_student') }}"
-                method="GET"
-                class="form-box">
-
-                <div class="input-group">
-
-                    <label>Course</label>
-
-                    <select
-                        name="course"
-                        id="add_course"
-                        onchange="loadBatch()"
-                        required>
-
-                        <option value="">
-                            Select Course
-                        </option>
-
-                        <option value="UG">
-                            UG
-                        </option>
-
-                        <option value="PG">
-                            PG
-                        </option>
-
-                    </select>
+                    </div>
 
                 </div>
 
-                <div class="input-group">
+                <!-- Quick Summary -->
 
-                    <label>Batch</label>
+                <div class="dashboard-row three-col">
 
-                    <select
-                        name="batch"
-                        id="batch_list"
-                        required>
+                    <div class="dashboard-box">
+                        <h3>Courses</h3>
+                        <p><strong>UG</strong><span>{{ total_ug_students }} Students</span></p>
+                        <p><strong>PG</strong><span>{{ total_pg_students }} Students</span></p>
+                    </div>
 
-                        <option value="">
-                            Select Batch
-                        </option>
+                    <div class="dashboard-box">
+                        <h3>Batch Summary</h3>
+                        <p><strong>UG Batches</strong><span>{{ total_ug_batches }}</span></p>
+                        <p><strong>PG Batches</strong><span>{{ total_pg_batches }}</span></p>
+                    </div>
 
-                    </select>
+                    <div class="dashboard-box">
+                        <h3>Quick Actions</h3>
+                        <p class="quick-action">Upload Student Data</p>
+                        <p class="quick-action">Search Students</p>
+                        <p class="quick-action">Manage Batches</p>
+                    </div>
 
                 </div>
 
-                <button
-                    type="submit"
-                    class="primary-btn">
+            </section>
 
-                    ➜ Continue
+            <!-- ==========================================
+                        UPLOAD DATA
+            =========================================== -->
 
-                </button>
+            <section id="upload" class="page">
 
-            </form>
+                <div class="page-heading">
+                    <h2>Upload Student Data</h2>
+                    <p>Import a batch from a CSV or Excel file</p>
+                </div>
 
-        </section>
-    <!-- ==========================================
-        STUDENT SEARCH
-    ========================================== -->
+                <form action="{{ url_for('upload_data') }}"
+                      method="POST"
+                      enctype="multipart/form-data"
+                      class="form-box">
 
-        <section id="student_search" class="page">
+                    <div class="input-group">
+                        <label>Course</label>
+                        <select name="course" required>
+                            <option value="">Select Course</option>
+                            <option value="UG">UG</option>
+                            <option value="PG">PG</option>
+                        </select>
+                    </div>
 
-            <h2>Student Search</h2>
+                    <div class="input-group">
+                        <label>Batch</label>
+                        <input type="text" name="batch" placeholder="Example : 2025_2028" required>
+                    </div>
 
-            <form action="{{ url_for('student_search') }}"
-                method="POST"
-                class="form-box">
+                    <div class="upload-box">
+                        <h3>Upload CSV / Excel File</h3>
+                        <p>Supported formats : CSV, XLS, XLSX</p>
+                        <input type="file" name="datafile" accept=".csv,.xls,.xlsx">
+                    </div>
 
-                <label>Course</label>
+                    <div class="info">
+                        Leave the file empty if you only want to create a new batch.
+                    </div>
 
-                <select name="course" required>
+                    <button type="submit" class="primary-btn">Upload Data</button>
 
-                    <option value="">Select Course</option>
-                    <option value="UG">UG</option>
-                    <option value="PG">PG</option>
+                </form>
 
-                </select>
+            </section>
 
-                <label>Batch</label>
+            <!-- ==========================================
+                        ADD STUDENT
+            =========================================== -->
 
-                <input type="text"
-                    name="batch"
-                    placeholder="Example : 2025_2028"
-                    required>
+            <section id="add_student" class="page">
 
-                <label>Search By</label>
+                <div class="page-heading">
+                    <h2>Add Student</h2>
+                    <p>Choose a course and batch to continue</p>
+                </div>
 
-                <select name="search_type">
+                <form action="{{ url_for('add_student') }}" method="GET" class="form-box">
 
-                    <option value="regno">Register Number</option>
-                    <option value="name">Student Name</option>
+                    <div class="input-group">
+                        <label>Course</label>
+                        <select name="course" id="add_course" onchange="loadBatch()" required>
+                            <option value="">Select Course</option>
+                            <option value="UG">UG</option>
+                            <option value="PG">PG</option>
+                        </select>
+                    </div>
 
-                </select>
+                    <div class="input-group">
+                        <label>Batch</label>
+                        <select name="batch" id="batch_list" required>
+                            <option value="">Select Batch</option>
+                        </select>
+                    </div>
 
-                <label>Keyword</label>
+                    <button type="submit" class="primary-btn">Continue</button>
 
-                <input type="text"
-                    name="keyword"
-                    required>
+                </form>
 
-                <button type="submit"
-                        class="primary-btn">
+            </section>
 
-                    🔍 Search
+            <!-- ==========================================
+                STUDENT SEARCH
+            ========================================== -->
 
-                </button>
+            <section id="student_search" class="page">
 
-            </form>
+                <div class="page-heading">
+                    <h2>Student Search</h2>
+                    <p>Look up a student by register number or name</p>
+                </div>
 
-        </section>
-        <!-- ==========================================
-        ADD NEW BATCH
-        ========================================== -->
+                <form action="{{ url_for('student_search') }}" method="POST" class="form-box">
 
-        <section id="add_batch" class="page">
+                    <div class="input-group">
+                        <label>Course</label>
+                        <select name="course" required>
+                            <option value="">Select Course</option>
+                            <option value="UG">UG</option>
+                            <option value="PG">PG</option>
+                        </select>
+                    </div>
 
-            <h2>Create New Batch</h2>
+                    <div class="input-group">
+                        <label>Batch</label>
+                        <input type="text" name="batch" placeholder="Example : 2025_2028" required>
+                    </div>
 
-            <form action="{{ url_for('add_batch') }}"
-                method="POST"
-                class="form-box">
+                    <div class="input-group">
+                        <label>Search By</label>
+                        <select name="search_type">
+                            <option value="regno">Register Number</option>
+                            <option value="name">Student Name</option>
+                        </select>
+                    </div>
 
-                <label>Course</label>
+                    <div class="input-group">
+                        <label>Keyword</label>
+                        <input type="text" name="keyword" required>
+                    </div>
 
-                <select name="course" required>
+                    <button type="submit" class="primary-btn">Search</button>
 
-                    <option value="UG">UG</option>
-                    <option value="PG">PG</option>
+                </form>
 
-                </select>
+            </section>
 
-                <label>Batch</label>
+            <!-- ==========================================
+                ADD NEW BATCH
+            ========================================== -->
 
-                <input type="text"
-                    name="batch"
-                    placeholder="Example : 2027_2030"
-                    required>
+            <section id="add_batch" class="page">
 
-                <button type="submit"
-                        class="primary-btn">
+                <div class="page-heading">
+                    <h2>Create New Batch</h2>
+                    <p>Register a new batch under a course</p>
+                </div>
 
-                    ➕ Create Batch
+                <form action="{{ url_for('add_batch') }}" method="POST" class="form-box">
 
-                </button>
+                    <div class="input-group">
+                        <label>Course</label>
+                        <select name="course" required>
+                            <option value="UG">UG</option>
+                            <option value="PG">PG</option>
+                        </select>
+                    </div>
 
-            </form>
+                    <div class="input-group">
+                        <label>Batch</label>
+                        <input type="text" name="batch" placeholder="Example : 2027_2030" required>
+                    </div>
 
-        </section>
-    <!-- ==========================================
-        DELETE BATCH
-    ========================================== -->
+                    <button type="submit" class="primary-btn">Create Batch</button>
 
-        <section id="delete_batch" class="page">
+                </form>
 
-            <h2>Delete Batch</h2>
+            </section>
 
-            <form action="{{ url_for('delete_batch') }}"
-                method="POST"
-                class="form-box">
+            <!-- ==========================================
+                DELETE BATCH
+            ========================================== -->
 
-                <label>Course</label>
+            <section id="delete_batch" class="page">
 
-                <select name="course" required>
+                <div class="page-heading">
+                    <h2>Delete Batch</h2>
+                    <p>This action permanently removes a batch and its records</p>
+                </div>
 
-                    <option value="UG">UG</option>
-                    <option value="PG">PG</option>
+                <form action="{{ url_for('delete_batch') }}" method="POST" class="form-box">
 
-                </select>
+                    <div class="input-group">
+                        <label>Course</label>
+                        <select name="course" required>
+                            <option value="UG">UG</option>
+                            <option value="PG">PG</option>
+                        </select>
+                    </div>
 
-                <label>Batch</label>
+                    <div class="input-group">
+                        <label>Batch</label>
+                        <input type="text" name="batch" placeholder="Example : 2025_2028" required>
+                    </div>
 
-                <input type="text"
-                    name="batch"
-                    placeholder="Example : 2025_2028"
-                    required>
+                    <button type="submit"
+                            class="delete-btn"
+                            onclick="return confirm('Delete this batch permanently?')">
+                        Delete Batch
+                    </button>
 
-                <button type="submit"
-                        class="delete-btn"
-                        onclick="return confirm('Delete this batch permanently?')">
+                </form>
 
-                    🗑 Delete Batch
+            </section>
 
-                </button>
+        </main>
 
-            </form>
+    </div>
 
-        </section>
-    <script>
+</div>
+
+<script>
+
+// ==========================================
+// SIDEBAR TOGGLE
+// ==========================================
+
+function toggleSidebar(){
+
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    const menuBtn = document.getElementById("menuBtn");
+
+    const isOpen = sidebar.classList.toggle("show");
+    overlay.classList.toggle("show");
+    menuBtn.classList.toggle("is-active");
+    menuBtn.setAttribute("aria-expanded", isOpen);
+
+}
+
+function closeSidebar(){
+
+    document.getElementById("sidebar").classList.remove("show");
+    document.getElementById("overlay").classList.remove("show");
+    document.getElementById("menuBtn").classList.remove("is-active");
+    document.getElementById("menuBtn").setAttribute("aria-expanded", "false");
+
+}
 
 // ==========================================
 // SHOW PAGE
@@ -590,114 +516,61 @@
 
 function showPage(pageId, btn){
 
-    const pages =
-    document.querySelectorAll(".page");
-
-    pages.forEach(function(page){
-
+    document.querySelectorAll(".page").forEach(function(page){
         page.classList.remove("active-page");
-
     });
 
-    document
-    .getElementById(pageId)
-    .classList.add("active-page");
+    document.getElementById(pageId).classList.add("active-page");
 
-
-    const buttons =
-    document.querySelectorAll(".nav-btn");
-
-    buttons.forEach(function(button){
-
+    document.querySelectorAll(".nav-btn").forEach(function(button){
         button.classList.remove("active");
-
     });
 
     if(btn){
-
         btn.classList.add("active");
-
     }
+
+    closeSidebar();
+    document.querySelector(".content").scrollTo({ top: 0, behavior: "smooth" });
 
 }
 
-
-
 // ==========================================
-// LOAD BATCHS
+// LOAD BATCHES
 // ==========================================
 
 const batches = {
-
     UG : {{ ug_batches|tojson }},
-
     PG : {{ pg_batches|tojson }}
-
 };
-
-
 
 function loadBatch(){
 
-    let course =
-    document.getElementById("add_course").value;
+    let course = document.getElementById("add_course").value;
+    let select = document.getElementById("batch_list");
 
-    let select =
-    document.getElementById("batch_list");
+    select.innerHTML = "";
 
-    select.innerHTML="";
-
-    let first =
-    document.createElement("option");
-
-    first.text="Select Batch";
-
-    first.value="";
-
+    let first = document.createElement("option");
+    first.text = "Select Batch";
+    first.value = "";
     select.appendChild(first);
 
     if(!batches[course]){
-
         return;
-
     }
 
     batches[course].forEach(function(batch){
-
-        let option =
-        document.createElement("option");
-
-        option.value=batch;
-
-        option.text=batch;
-
+        let option = document.createElement("option");
+        option.value = batch;
+        option.text = batch;
         select.appendChild(option);
-
     });
 
 }
 
-
-
-// ==========================================
-// DEFAULT PAGE
-// ==========================================
-
-window.onload=function(){
-
-    document
-    .getElementById("dashboard")
-    .classList.add("active-page");
-
-};
-
 </script>
-
-</main>
-
-</div>
 
 </body>
 
 </html>
-       
