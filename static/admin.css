@@ -9,61 +9,199 @@
     font-family:"Segoe UI",Arial,sans-serif;
 }
 
-
-
-/* ==========================================
-   BODY
-========================================== */
+html{
+    scroll-behavior:smooth;
+}
 
 body{
+    background:#f1f5f9;
+    color:#1e293b;
+    min-height:100vh;
+}
 
-    background:
-    linear-gradient(
-        135deg,
-        #eef2ff,
-        #f8fafc
+/* ==========================================
+   MAIN LAYOUT
+========================================== */
+
+.main-container{
+    display:flex;
+    width:100%;
+    min-height:100vh;
+}
+
+/* ==========================================
+   SIDEBAR
+========================================== */
+
+.sidebar{
+
+    position:fixed;
+
+    left:0;
+
+    top:0;
+
+    width:260px;
+
+    height:100vh;
+
+    background:linear-gradient(
+        180deg,
+        #1e3a8a,
+        #172554
     );
 
-    min-height:100vh;
+    color:white;
 
-    color:#1e293b;
+    overflow-y:auto;
 
-}
+    box-shadow:
+    5px 0 15px rgba(0,0,0,.15);
 
-
-
-
-/* ==========================================
-   WRAPPER
-========================================== */
-
-
-.wrapper{
-
-    width:95%;
-
-    max-width:1400px;
-
-    margin:auto;
+    z-index:1000;
 
 }
 
-
-
 /* ==========================================
-   HEADER
+   LOGO
 ========================================== */
 
+.logo{
 
-header{
+    padding:30px 20px;
 
-    margin-top:25px;
+    text-align:center;
+
+    border-bottom:
+    1px solid rgba(255,255,255,.15);
+
+}
+
+.logo h2{
+
+    font-size:32px;
+
+    margin-bottom:8px;
+
+}
+
+.logo p{
+
+    color:#cbd5e1;
+
+    font-size:15px;
+
+}
+
+/* ==========================================
+   SIDEBAR MENU
+========================================== */
+
+.sidebar a{
+
+    text-decoration:none;
+
+}
+
+.nav-btn{
+
+    width:100%;
+
+    background:transparent;
+
+    color:white;
+
+    border:none;
+
+    padding:15px 20px;
+
+    text-align:left;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.3s;
+
+    border-left:4px solid transparent;
+
+}
+
+.nav-btn:hover{
+
+    background:#2563eb;
+
+    border-left:4px solid #ffffff;
+
+}
+
+.nav-btn.active{
+
+    background:#2563eb;
+
+    border-left:4px solid #facc15;
+
+}
+
+/* ==========================================
+   LOGOUT
+========================================== */
+
+.logout{
+
+    width:calc(100% - 20px);
+
+    margin:20px 10px;
+
+    background:#dc2626;
+
+    color:white;
+
+    border:none;
+
+    padding:14px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+    font-size:15px;
+
+}
+
+.logout:hover{
+
+    background:#b91c1c;
+
+}
+
+/* ==========================================
+   CONTENT
+========================================== */
+
+.content{
+
+    margin-left:260px;
+
+    width:calc(100% - 260px);
+
+    padding:30px;
+
+}
+
+/* ==========================================
+   TOP BAR
+========================================== */
+
+.topbar{
 
     background:white;
 
-    padding:25px 35px;
+    border-radius:18px;
 
-    border-radius:20px;
+    padding:20px 30px;
 
     display:flex;
 
@@ -71,54 +209,428 @@ header{
 
     align-items:center;
 
+    margin-bottom:30px;
+
     box-shadow:
-    0 10px 30px rgba(0,0,0,0.08);
+    0 8px 25px rgba(0,0,0,.08);
 
 }
 
-
-
-
-.logo h1{
-
-    font-size:30px;
+.topbar h1{
 
     color:#1d4ed8;
 
-}
-
-
-
-.logo p{
-
-    margin-top:5px;
-
-    color:#64748b;
-
-    font-size:16px;
+    font-size:28px;
 
 }
 
+.home-btn{
 
+    background:#2563eb;
 
-
-
-.header-buttons{
-
-    display:flex;
-
-    gap:15px;
-
-}
-
-
-
-
-button{
+    color:white;
 
     border:none;
 
     padding:12px 22px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.home-btn:hover{
+
+    background:#1d4ed8;
+
+    transform:translateY(-2px);
+
+}
+/* ==========================================
+   PAGE SYSTEM
+========================================== */
+
+.page{
+
+    display:none;
+
+    animation:fadeIn .35s ease;
+
+}
+
+.active-page{
+
+    display:block;
+
+}
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+        transform:translateY(15px);
+
+    }
+
+    to{
+
+        opacity:1;
+        transform:translateY(0);
+
+    }
+
+}
+
+/* ==========================================
+   PAGE TITLE
+========================================== */
+
+.page h2{
+
+    color:#1d4ed8;
+
+    font-size:30px;
+
+    margin-bottom:25px;
+
+}
+
+/* ==========================================
+   DASHBOARD GRID
+========================================== */
+
+.dashboard-grid{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(260px,1fr));
+
+    gap:25px;
+
+}
+
+/* ==========================================
+   DASHBOARD CARD
+========================================== */
+
+.box{
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:30px;
+
+    box-shadow:
+    0 10px 25px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+    cursor:pointer;
+
+    position:relative;
+
+    overflow:hidden;
+
+}
+
+.box::before{
+
+    content:"";
+
+    position:absolute;
+
+    left:0;
+
+    top:0;
+
+    width:6px;
+
+    height:100%;
+
+    background:#2563eb;
+
+}
+
+.box:hover{
+
+    transform:translateY(-8px);
+
+    box-shadow:
+    0 20px 40px rgba(0,0,0,.12);
+
+}
+
+.box h3{
+
+    color:#1d4ed8;
+
+    margin-bottom:12px;
+
+    font-size:22px;
+
+}
+
+.box p{
+
+    color:#64748b;
+
+    line-height:1.6;
+
+    font-size:15px;
+
+}
+
+/* ==========================================
+   STATISTICS CARD
+========================================== */
+
+.stats-grid{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
+
+    gap:20px;
+
+    margin-top:30px;
+
+}
+
+.stat-card{
+
+    background:white;
+
+    border-radius:16px;
+
+    padding:25px;
+
+    text-align:center;
+
+    box-shadow:
+    0 8px 20px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.stat-card:hover{
+
+    transform:scale(1.03);
+
+}
+
+.stat-card h3{
+
+    font-size:38px;
+
+    color:#2563eb;
+
+    margin-bottom:10px;
+
+}
+
+.stat-card p{
+
+    color:#64748b;
+
+    font-size:15px;
+
+}
+
+/* ==========================================
+   QUICK ACTIONS
+========================================== */
+
+.quick-actions{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(auto-fit,minmax(180px,1fr));
+
+    gap:18px;
+
+    margin-top:35px;
+
+}
+
+.quick-btn{
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    border-radius:12px;
+
+    padding:18px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.3s;
+
+}
+
+.quick-btn:hover{
+
+    background:#1d4ed8;
+
+    transform:translateY(-3px);
+
+}
+
+/* ==========================================
+   WELCOME BOX
+========================================== */
+
+.welcome-box{
+
+    background:linear-gradient(
+        135deg,
+        #2563eb,
+        #1e40af
+    );
+
+    color:white;
+
+    padding:30px;
+
+    border-radius:18px;
+
+    margin-bottom:30px;
+
+}
+
+.welcome-box h2{
+
+    color:white;
+
+    margin-bottom:10px;
+
+}
+
+.welcome-box p{
+
+    color:#e2e8f0;
+
+    line-height:1.6;
+
+}
+/* ==========================================
+   FORM CONTAINER
+========================================== */
+
+.form-box{
+
+    background:#ffffff;
+
+    padding:30px;
+
+    border-radius:18px;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+}
+
+/* ==========================================
+   INPUT GROUP
+========================================== */
+
+.input-group{
+
+    margin-bottom:22px;
+
+}
+
+.input-group label{
+
+    display:block;
+
+    font-weight:600;
+
+    color:#334155;
+
+    margin-bottom:8px;
+
+}
+
+/* ==========================================
+   INPUT & SELECT
+========================================== */
+
+.input-group input,
+.input-group select,
+.input-group textarea{
+
+    width:100%;
+
+    padding:14px 15px;
+
+    border:1px solid #cbd5e1;
+
+    border-radius:10px;
+
+    font-size:15px;
+
+    outline:none;
+
+    transition:.3s;
+
+    background:#ffffff;
+
+}
+
+.input-group textarea{
+
+    resize:vertical;
+
+    min-height:120px;
+
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus{
+
+    border-color:#2563eb;
+
+    box-shadow:0 0 8px rgba(37,99,235,.25);
+
+}
+
+/* ==========================================
+   PLACEHOLDER
+========================================== */
+
+::placeholder{
+
+    color:#94a3b8;
+
+}
+
+/* ==========================================
+   BUTTONS
+========================================== */
+
+.primary-btn{
+
+    background:#2563eb;
+
+    color:white;
+
+    border:none;
+
+    padding:14px 28px;
 
     border-radius:10px;
 
@@ -130,583 +642,37 @@ button{
 
 }
 
+.primary-btn:hover{
 
-
-button:hover{
+    background:#1d4ed8;
 
     transform:translateY(-2px);
 
 }
 
+.secondary-btn{
 
-
-
-.home-btn{
-
-    background:#2563eb;
+    background:#64748b;
 
     color:white;
-
-}
-
-
-
-.logout-btn{
-
-    background:#dc2626;
-
-    color:white;
-
-}
-
-
-
-
-
-/* ==========================================
-   CARDS
-========================================== */
-
-
-.cards{
-
-
-    display:grid;
-
-    grid-template-columns:
-    repeat(
-    4,
-    1fr
-    );
-
-
-    gap:25px;
-
-
-    margin-top:30px;
-
-
-}
-
-
-
-
-.card{
-
-
-    background:white;
-
-    padding:30px 20px;
-
-    border-radius:20px;
-
-    text-align:center;
-
-    box-shadow:
-
-    0 8px 25px rgba(0,0,0,.08);
-
-    transition:.3s;
-
-
-}
-
-
-
-.card:hover{
-
-
-    transform:
-
-    translateY(-8px);
-
-
-    box-shadow:
-
-    0 15px 35px rgba(0,0,0,.15);
-
-
-}
-
-
-
-
-.card h2{
-
-    font-size:40px;
-
-}
-
-
-
-.card h3{
-
-    margin:15px 0;
-
-    color:#1e40af;
-
-}
-
-
-
-.card p{
-
-    color:#64748b;
-
-    min-height:45px;
-
-}
-
-
-
-
-
-.card button{
-
-    margin-top:15px;
-
-    background:#2563eb;
-
-    color:white;
-
-}
-
-
-
-
-
-/* ==========================================
-   ALERT
-========================================== */
-
-
-.alert{
-
-    margin-top:25px;
-
-    padding:15px;
-
-    border-radius:12px;
-
-    text-align:center;
-
-    font-weight:600;
-
-}
-
-
-
-.success{
-
-    background:#dcfce7;
-
-    color:#166534;
-
-}
-
-
-
-.error{
-
-    background:#fee2e2;
-
-    color:#991b1b;
-
-}
-
-
-
-
-
-
-/* ==========================================
-   SECTION FORMS
-========================================== */
-
-
-.section{
-
-    margin-top:35px;
-
-    background:white;
-
-    padding:35px;
-
-    border-radius:20px;
-
-    box-shadow:
-
-    0 10px 30px rgba(0,0,0,.1);
-
-}
-
-
-
-.section h2{
-
-    margin-bottom:25px;
-
-    color:#1e40af;
-
-}
-
-
-
-
-.section form{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:15px;
-
-}
-
-
-
-
-
-label{
-
-    font-weight:600;
-
-    color:#334155;
-
-}
-
-
-
-
-
-input,
-select{
-
-
-    padding:13px;
-
-    border:1px solid #cbd5e1;
-
-    border-radius:10px;
-
-    font-size:15px;
-
-    outline:none;
-
-
-}
-
-
-
-input:focus,
-select:focus{
-
-
-    border-color:#2563eb;
-
-
-    box-shadow:
-
-    0 0 5px rgba(37,99,235,.3);
-
-}
-
-
-
-
-.section button{
-
-
-    background:#2563eb;
-
-    color:white;
-
-    width:max-content;
-
-}
-
-
-
-
-.close-btn{
-
-    background:#64748b !important;
-
-}
-
-
-
-
-
-.delete-button{
-
-
-    background:#dc2626 !important;
-
-}
-
-
-
-
-
-.info{
-
-
-    background:#eff6ff;
-
-    padding:12px;
-
-    border-radius:10px;
-
-    color:#1d4ed8;
-
-}
-
-
-
-
-
-
-/* ==========================================
-   FOOTER
-========================================== */
-
-
-footer{
-
-
-    margin-top:50px;
-
-    text-align:center;
-
-    padding:25px;
-
-    color:#64748b;
-
-
-}
-
-
-
-footer hr{
-
-
-    margin-bottom:20px;
 
     border:none;
 
-    border-top:1px solid #cbd5e1;
+    padding:14px 28px;
 
+    border-radius:10px;
 
-}
+    cursor:pointer;
 
-
-
-
-
-
-/* ==========================================
-   RESPONSIVE
-========================================== */
-
-
-@media(max-width:1100px){
-
-
-.cards{
-
-grid-template-columns:
-repeat(2,1fr);
+    transition:.3s;
 
 }
 
+.secondary-btn:hover{
+
+    background:#475569;
 
 }
-
-
-
-@media(max-width:650px){
-
-
-header{
-
-flex-direction:column;
-
-gap:20px;
-
-text-align:center;
-
-}
-
-
-
-.cards{
-
-grid-template-columns:
-1fr;
-
-}
-
-
-
-.logo h1{
-
-font-size:22px;
-
-}
-
-
-}
-/* ==========================================
-   ADMIN DASHBOARD FINAL POLISH
-========================================== */
-
-
-/* ==========================================
-   CARD COLOR VARIANTS
-========================================== */
-
-
-.card.blue h2{
-
-    color:#2563eb;
-
-}
-
-
-.card.green h2{
-
-    color:#16a34a;
-
-}
-
-
-.card.orange h2{
-
-    color:#ea580c;
-
-}
-
-
-.card.red h2{
-
-    color:#dc2626;
-
-}
-
-
-.card.purple h2{
-
-    color:#9333ea;
-
-}
-
-
-
-
-.card-icon{
-
-    font-size:45px;
-
-    margin-bottom:15px;
-
-}
-
-
-
-
-/* ==========================================
-   TABLE DESIGN
-========================================== */
-
-
-.table-container{
-
-    width:100%;
-
-    overflow-x:auto;
-
-    margin-top:20px;
-
-}
-
-
-
-table{
-
-    width:100%;
-
-    border-collapse:collapse;
-
-    background:white;
-
-    border-radius:15px;
-
-    overflow:hidden;
-
-}
-
-
-
-th{
-
-    background:#2563eb;
-
-    color:white;
-
-    padding:14px;
-
-    text-align:center;
-
-}
-
-
-
-td{
-
-    padding:12px;
-
-    border-bottom:1px solid #e2e8f0;
-
-    text-align:center;
-
-}
-
-
-
-tr:hover{
-
-    background:#eff6ff;
-
-}
-
-
-
-
-/* ==========================================
-   ACTION BUTTONS
-========================================== */
-
-
-.edit-btn{
-
-    background:#16a34a;
-
-    color:white;
-
-}
-
-
-
-.view-btn{
-
-    background:#2563eb;
-
-    color:white;
-
-}
-
-
 
 .delete-btn{
 
@@ -714,53 +680,256 @@ tr:hover{
 
     color:white;
 
+    border:none;
+
+    padding:14px 28px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
 }
 
-
-
-.edit-btn:hover,
-.view-btn:hover,
 .delete-btn:hover{
 
-    opacity:.85;
+    background:#b91c1c;
 
 }
-
-
 
 /* ==========================================
-   UPLOAD BOX
+   BUTTON GROUP
 ========================================== */
 
+.button-group{
 
-.upload-box{
+    display:flex;
 
-    border:2px dashed #2563eb;
+    gap:15px;
 
-    padding:35px;
-
-    text-align:center;
-
-    border-radius:15px;
-
-    background:#eff6ff;
-
-}
-
-
-
-.upload-box input{
+    flex-wrap:wrap;
 
     margin-top:15px;
 
 }
 
+/* ==========================================
+   INFORMATION BOX
+========================================== */
 
+.info{
+
+    background:#eff6ff;
+
+    color:#1d4ed8;
+
+    padding:15px;
+
+    border-left:5px solid #2563eb;
+
+    border-radius:10px;
+
+    margin:18px 0;
+
+    line-height:1.6;
+
+}
+
+/* ==========================================
+   ALERTS
+========================================== */
+
+.alert{
+
+    padding:15px 20px;
+
+    border-radius:10px;
+
+    margin-bottom:20px;
+
+    font-weight:600;
+
+}
+
+.success{
+
+    background:#dcfce7;
+
+    color:#166534;
+
+    border-left:5px solid #16a34a;
+
+}
+
+.error{
+
+    background:#fee2e2;
+
+    color:#991b1b;
+
+    border-left:5px solid #dc2626;
+
+}
+
+.warning{
+
+    background:#fef9c3;
+
+    color:#854d0e;
+
+    border-left:5px solid #facc15;
+
+}
+
+/* ==========================================
+   FILE INPUT
+========================================== */
+
+input[type=file]{
+
+    padding:10px;
+
+    background:#f8fafc;
+
+    cursor:pointer;
+
+}
+/* ==========================================
+   TABLE CONTAINER
+========================================== */
+
+.table-container{
+
+    width:100%;
+
+    overflow-x:auto;
+
+    margin-top:25px;
+
+}
+
+/* ==========================================
+   TABLE
+========================================== */
+
+table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:#ffffff;
+
+    border-radius:15px;
+
+    overflow:hidden;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+thead{
+
+    background:#2563eb;
+
+}
+
+thead th{
+
+    color:white;
+
+    padding:16px;
+
+    font-size:15px;
+
+    text-align:center;
+
+}
+
+tbody td{
+
+    padding:14px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    text-align:center;
+
+    color:#334155;
+
+}
+
+tbody tr{
+
+    transition:.3s;
+
+}
+
+tbody tr:nth-child(even){
+
+    background:#f8fafc;
+
+}
+
+tbody tr:hover{
+
+    background:#eff6ff;
+
+}
+
+/* ==========================================
+   TABLE ACTION BUTTONS
+========================================== */
+
+.action-btn{
+
+    border:none;
+
+    padding:8px 14px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    color:white;
+
+    font-size:13px;
+
+    margin:2px;
+
+    transition:.3s;
+
+}
+
+.view-btn{
+
+    background:#2563eb;
+
+}
+
+.edit-btn{
+
+    background:#16a34a;
+
+}
+
+.remove-btn{
+
+    background:#dc2626;
+
+}
+
+.action-btn:hover{
+
+    opacity:.85;
+
+    transform:translateY(-2px);
+
+}
 
 /* ==========================================
    SEARCH AREA
 ========================================== */
-
 
 .search-area{
 
@@ -770,32 +939,68 @@ tr:hover{
 
     flex-wrap:wrap;
 
+    margin-bottom:25px;
+
 }
-
-
 
 .search-area input,
 .search-area select{
 
     flex:1;
 
-    min-width:200px;
+    min-width:220px;
 
 }
 
-
-
-
 /* ==========================================
-   PROFILE IMAGE
+   UPLOAD BOX
 ========================================== */
 
+.upload-box{
+
+    border:2px dashed #2563eb;
+
+    border-radius:15px;
+
+    background:#eff6ff;
+
+    padding:40px;
+
+    text-align:center;
+
+}
+
+.upload-box h3{
+
+    color:#2563eb;
+
+    margin-bottom:10px;
+
+}
+
+.upload-box p{
+
+    color:#64748b;
+
+    margin-bottom:20px;
+
+}
+
+.upload-box input{
+
+    width:100%;
+
+}
+
+/* ==========================================
+   STUDENT PHOTO
+========================================== */
 
 .student-photo{
 
-    width:70px;
+    width:75px;
 
-    height:70px;
+    height:75px;
 
     border-radius:50%;
 
@@ -805,24 +1010,59 @@ tr:hover{
 
 }
 
-
-
 /* ==========================================
-   EMPTY DATA
+   PROFILE CARD
 ========================================== */
 
+.profile-card{
 
-.empty{
+    display:flex;
 
-    text-align:center;
+    align-items:center;
 
-    padding:40px;
+    gap:20px;
+
+    background:#ffffff;
+
+    padding:20px;
+
+    border-radius:15px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.profile-info h3{
+
+    color:#1d4ed8;
+
+    margin-bottom:5px;
+
+}
+
+.profile-info p{
 
     color:#64748b;
 
 }
 
+/* ==========================================
+   EMPTY DATA
+========================================== */
 
+.empty{
+
+    text-align:center;
+
+    padding:50px;
+
+    background:#ffffff;
+
+    border-radius:15px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
 
 .empty h3{
 
@@ -832,41 +1072,41 @@ tr:hover{
 
 }
 
+.empty p{
 
+    color:#64748b;
+
+}
 
 /* ==========================================
    LOADING
 ========================================== */
 
-
 .loading{
 
-    width:45px;
+    width:55px;
 
-    height:45px;
+    height:55px;
 
     border-radius:50%;
 
-    border:5px solid #ddd;
+    border:5px solid #e5e7eb;
 
-    border-top-color:#2563eb;
-
-    animation:rotate 1s linear infinite;
+    border-top:5px solid #2563eb;
 
     margin:auto;
 
+    animation:spin 1s linear infinite;
+
 }
 
-
-
-@keyframes rotate{
+@keyframes spin{
 
     from{
 
         transform:rotate(0deg);
 
     }
-
 
     to{
 
@@ -876,152 +1116,368 @@ tr:hover{
 
 }
 
-
-
-
-
 /* ==========================================
-   RESPONSIVE IMPROVEMENT
+   BADGES
 ========================================== */
 
+.badge{
 
-@media(max-width:900px){
+    display:inline-block;
 
+    padding:6px 12px;
 
-.wrapper{
-
-    width:92%;
-
-}
-
-
-header{
-
-    padding:20px;
-
-}
-
-
-.section{
-
-    padding:25px;
-
-}
-
-
-.header-buttons{
-
-    width:100%;
-
-    justify-content:center;
-
-}
-
-
-button{
-
-    padding:11px 18px;
-
-}
-
-
-}
-
-
-
-@media(max-width:450px){
-
-
-.wrapper{
-
-    width:95%;
-
-}
-
-
-.logo h1{
-
-    font-size:20px;
-
-}
-
-
-.logo p{
+    border-radius:20px;
 
     font-size:13px;
 
-}
-
-
-.header-buttons{
-
-    flex-direction:column;
-
-    width:100%;
+    font-weight:600;
 
 }
 
+.badge-success{
 
-.header-buttons button{
+    background:#dcfce7;
 
-    width:100%;
-
-}
-
-
-.section{
-
-    padding:18px;
+    color:#166534;
 
 }
 
+.badge-warning{
 
-.section h2{
+    background:#fef9c3;
 
-    font-size:20px;
-
-}
-
-
+    color:#854d0e;
 
 }
 
+.badge-danger{
 
+    background:#fee2e2;
 
+    color:#991b1b;
 
+}
 /* ==========================================
-   PRINT HIDE
+   RESPONSIVE - LARGE TABLETS
 ========================================== */
 
+@media(max-width:1200px){
+
+    .sidebar{
+
+        width:220px;
+
+    }
+
+    .content{
+
+        margin-left:220px;
+
+        width:calc(100% - 220px);
+
+    }
+
+}
+
+/* ==========================================
+   TABLETS
+========================================== */
+
+@media(max-width:992px){
+
+    .topbar{
+
+        flex-direction:column;
+
+        gap:15px;
+
+        text-align:center;
+
+    }
+
+    .dashboard-grid{
+
+        grid-template-columns:
+        repeat(2,1fr);
+
+    }
+
+    .stats-grid{
+
+        grid-template-columns:
+        repeat(2,1fr);
+
+    }
+
+    .button-group{
+
+        flex-direction:column;
+
+    }
+
+    .button-group button{
+
+        width:100%;
+
+    }
+
+}
+
+/* ==========================================
+   MOBILE MENU
+========================================== */
+
+@media(max-width:768px){
+
+    .main-container{
+
+        display:block;
+
+    }
+
+    .sidebar{
+
+        position:relative;
+
+        width:100%;
+
+        height:auto;
+
+        padding-bottom:20px;
+
+    }
+
+    .content{
+
+        margin-left:0;
+
+        width:100%;
+
+        padding:20px;
+
+    }
+
+    .logo{
+
+        padding:20px;
+
+    }
+
+    .nav-btn{
+
+        padding:14px;
+
+    }
+
+    .dashboard-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .stats-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .profile-card{
+
+        flex-direction:column;
+
+        text-align:center;
+
+    }
+
+}
+
+/* ==========================================
+   SMALL MOBILE
+========================================== */
+
+@media(max-width:480px){
+
+    .content{
+
+        padding:15px;
+
+    }
+
+    .topbar{
+
+        padding:18px;
+
+    }
+
+    .topbar h1{
+
+        font-size:22px;
+
+    }
+
+    .page h2{
+
+        font-size:24px;
+
+    }
+
+    .form-box{
+
+        padding:18px;
+
+    }
+
+    .box{
+
+        padding:20px;
+
+    }
+
+    table{
+
+        font-size:13px;
+
+    }
+
+    th,
+    td{
+
+        padding:10px;
+
+    }
+
+    .student-photo{
+
+        width:60px;
+
+        height:60px;
+
+    }
+
+}
+
+/* ==========================================
+   SCROLLBAR
+========================================== */
+
+::-webkit-scrollbar{
+
+    width:10px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:#e2e8f0;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#2563eb;
+
+    border-radius:20px;
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:#1d4ed8;
+
+}
+
+/* ==========================================
+   SELECTION
+========================================== */
+
+::selection{
+
+    background:#2563eb;
+
+    color:white;
+
+}
+
+/* ==========================================
+   LINK
+========================================== */
+
+a{
+
+    text-decoration:none;
+
+}
+
+/* ==========================================
+   SMOOTH TRANSITION
+========================================== */
+
+button,
+input,
+select,
+textarea,
+.box,
+.nav-btn,
+.action-btn{
+
+    transition:.3s ease;
+
+}
+
+/* ==========================================
+   PRINT
+========================================== */
 
 @media print{
 
+    .sidebar,
+    .topbar,
+    button,
+    .button-group{
 
-button,
-.header-buttons,
-footer{
+        display:none !important;
 
-    display:none !important;
+    }
+
+    .content{
+
+        margin:0;
+
+        width:100%;
+
+        padding:0;
+
+    }
+
+    .page{
+
+        display:block !important;
+
+    }
+
+    .box,
+    .form-box,
+    table{
+
+        box-shadow:none;
+
+        border:1px solid #ddd;
+
+    }
+
+}
+.page{
+
+    display:none;
 
 }
 
+.active-page{
 
-body{
-
-    background:white;
-
-}
-
-
-.section,
-.card,
-header{
-
-    box-shadow:none;
-
-    border:1px solid #ddd;
+    display:block;
 
 }
 
-
-}
+/* ==========================================
+   END
+========================================== */

@@ -75,9 +75,6 @@ ADMIN_FILE = "admin.json"
 
 LOG_FILE = "activity.log"
 
-
-
-
 # ==========================================
 # PHOTO SETTINGS
 # ==========================================
@@ -89,24 +86,15 @@ ALLOWED_EXTENSIONS = {
     "png"
 
 }
-
-
-
 def allowed_photo(filename):
 
     return (
-
         "." in filename
-
         and
-
         filename.rsplit(".",1)[1].lower()
         in ALLOWED_EXTENSIONS
 
     )
-
-
-
 
 
 # ==========================================
@@ -297,8 +285,6 @@ PG_COLUMNS = COMMON_COLUMNS + [
 
 
 
-
-
 # ==========================================
 # ADMIN FUNCTIONS
 # ==========================================
@@ -309,12 +295,11 @@ def load_admin():
 
     if not os.path.exists(ADMIN_FILE):
 
-
         data = {
 
             "username":"admin",
 
-            "password":"admin123"
+            "password":"admin12"
 
         }
 
@@ -564,10 +549,8 @@ def admin_login():
             and
             password==admin["password"]
         ):
-
-
             session["admin"]=True
-
+            session["last_login"] = datetime.now().strftime("%d-%m-%Y %I:%M:%S %p")
 
             write_log(
                 "Admin Login"
@@ -585,15 +568,9 @@ def admin_login():
             error="Invalid Username or Password"
         )
 
-
-
     return render_template(
         "admin_login.html"
     )
-
-
-
-
 
 
 # ==========================================
@@ -629,97 +606,142 @@ def logout():
 # HOME
 # ==========================================
 
-
 @app.route("/")
 def home():
 
-
-    ug_batches=[]
-
-    pg_batches=[]
-
-
-
-    for file in os.listdir(UG_FOLDER):
-
-        if file.endswith(".csv"):
-
-            ug_batches.append(
-                file.replace(".csv","")
-            )
-
-
-
-    for file in os.listdir(PG_FOLDER):
-
-        if file.endswith(".csv"):
-
-            pg_batches.append(
-                file.replace(".csv","")
-            )
-
-
-
     return render_template(
-        "index.html",
-        ug_batches=sorted(ug_batches),
-        pg_batches=sorted(pg_batches)
+        "index.html"
     )
-
-
-
-
-
-
-
 # ==========================================
 # ADMIN DASHBOARD
 # ==========================================
 
-
 @app.route("/admin")
 def admin():
-        
+
     if not session.get("admin"):
+        return redirect(url_for("admin_login"))
 
-        return redirect(
-            url_for("admin_login")
-        )
+    ug_batches = []
+    pg_batches = []
 
-    ug_batches=[]
+    total_ug_students = 0
+    total_pg_students = 0
 
-    pg_batches=[]
+    # -------------------------------
+    # UG Batches & Students
+    # -------------------------------
 
     for file in os.listdir(UG_FOLDER):
 
         if file.endswith(".csv"):
 
-            ug_batches.append(
-                file.replace(".csv","")
-            )
+            batch = file.replace(".csv", "")
+            ug_batches.append(batch)
 
+            df = load_csv("UG", batch)
 
+            if df is not None:
+                total_ug_students += len(df)
+
+    # -------------------------------
+    # PG Batches & Students
+    # -------------------------------
 
     for file in os.listdir(PG_FOLDER):
 
         if file.endswith(".csv"):
 
-            pg_batches.append(
-                file.replace(".csv","")
-            )
+            batch = file.replace(".csv", "")
+            pg_batches.append(batch)
 
+            df = load_csv("PG", batch)
 
+            if df is not None:
+                total_pg_students += len(df)
+
+    # -------------------------------
+    # Dashboard Statistics
+    # -------------------------------
+
+    total_students = total_ug_students + total_pg_students
+
+    total_ug_batches = len(ug_batches)
+    total_pg_batches = len(pg_batches)
+
+    total_batches = total_ug_batches + total_pg_batches
+
+    # -------------------------------
+    # Latest Uploaded Batch
+    # -------------------------------
+
+    latest_batch = "-"
+
+    all_batches = []
+
+    for batch in ug_batches:
+        all_batches.append(("UG", batch))
+
+    for batch in pg_batches:
+        all_batches.append(("PG", batch))
+
+    if all_batches:
+
+        latest_course, latest = sorted(all_batches, key=lambda x: x[1])[-1]
+
+        latest_batch = f"{latest_course} - {latest}"
+
+    # -------------------------------
+    # Last Login
+    # -------------------------------
+
+    last_login = session.get("last_login", "-")
+
+    # -------------------------------
+    # Recent Activities
+    # -------------------------------
+
+    recent_logs = []
+
+    if os.path.exists("activity.log"):
+
+        with open("activity.log", "r", encoding="utf-8") as file:
+
+            recent_logs = [
+                line.strip()
+                for line in file.readlines()[-5:]
+            ]
+
+        recent_logs.reverse()
+
+    # -------------------------------
+    # Render
+    # -------------------------------
 
     return render_template(
+
         "admin.html",
+
         ug_batches=sorted(ug_batches),
-        pg_batches=sorted(pg_batches)
+        pg_batches=sorted(pg_batches),
+
+        total_students=total_students,
+
+        total_ug_students=total_ug_students,
+        total_pg_students=total_pg_students,
+
+        total_ug_batches=total_ug_batches,
+        total_pg_batches=total_pg_batches,
+
+        total_batches=total_batches,
+
+        latest_batch=latest_batch,
+
+        last_login=last_login,
+
+        recent_logs=recent_logs
+
     )
-
-
-
-
-
 
 # ==========================================
 # UPLOAD DATA
@@ -1416,98 +1438,6 @@ def clear_log():
     return redirect(
         url_for("activity_log")
     )
-# ==========================================
-# DASHBOARD
-# ==========================================
-
-@app.route("/dashboard")
-def dashboard():
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
-
-    ug_batches = []
-    pg_batches = []
-
-
-    total_ug_students = 0
-    total_pg_students = 0
-
-
-
-    # UG DATA
-
-    for file in os.listdir(UG_FOLDER):
-
-        if file.endswith(".csv"):
-
-            batch = file.replace(".csv","")
-
-            ug_batches.append(batch)
-
-
-            df = load_csv(
-                "UG",
-                batch
-            )
-
-
-            if df is not None:
-
-                total_ug_students += len(df)
-
-
-
-
-    # PG DATA
-
-    for file in os.listdir(PG_FOLDER):
-
-        if file.endswith(".csv"):
-
-            batch = file.replace(".csv","")
-
-            pg_batches.append(batch)
-
-
-            df = load_csv(
-                "PG",
-                batch
-            )
-
-
-            if df is not None:
-
-                total_pg_students += len(df)
-
-
-
-
-    total_students = (
-        total_ug_students
-        +
-        total_pg_students
-    )
-
-
-
-    return render_template(
-        "dashboard.html",
-
-        total_ug_batches=len(ug_batches),
-
-        total_pg_batches=len(pg_batches),
-
-        total_ug_students=total_ug_students,
-
-        total_pg_students=total_pg_students,
-
-        total_students=total_students
-    )
 
 # ==========================================
 #  TIME TABLE
@@ -1578,6 +1508,7 @@ def add_batch():
     return redirect(
         url_for("admin")
     )
+
 # ==========================================
 # STUDENT SEARCH
 # ==========================================
@@ -1590,8 +1521,8 @@ def student_search():
     keyword = request.form["keyword"].strip()
 
     df = load_csv(course, batch)
-
     if df is None:
+        flash("Batch not found.", "error")
         return redirect(url_for("admin"))
 
     # Register Number Search
@@ -1600,10 +1531,8 @@ def student_search():
         student = df[df["RegNo"].astype(str) == keyword]
 
         if student.empty:
-            return render_template(
-                "admin.html",
-                error="Student Not Found"
-            )
+            flash("Student not found.", "error")
+            return redirect(url_for("admin"))
 
         data = student.iloc[0].to_dict()
 
@@ -1628,10 +1557,8 @@ def student_search():
     ]
 
     if students.empty:
-        return render_template(
-            "admin.html",
-            error="Student Not Found"
-        )
+        flash("Student not found.", "error")
+        return redirect(url_for("admin"))
 
     return render_template(
         "name_result.html",

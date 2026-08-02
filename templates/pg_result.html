@@ -215,399 +215,221 @@ textarea:not([readonly]){
 
     <!-- ================= STUDENT DETAILS ================= -->
 
+<table class="info">
 
-    <table class="info">
 
+<tr>
 
-    <tr>
+<td><b>Name</b></td>
 
-    <td>
-    <b>Name</b>
-    </td>
+<td>
+<input readonly
+name="Name"
+value="{{student.Name}}">
+</td>
 
 
-    <td colspan="5">
+<td><b>Father Name</b></td>
 
-    <input readonly
-    name="Name"
-    value="{{student.Name}}">
+<td>
+<input readonly
+name="ParentName"
+value="{{student.ParentName}}">
+</td>
 
-    </td>
 
-    </tr>
-    <tr>
+<td><b>Father Occupation</b></td>
 
+<td>
+<input readonly
+name="faOccupation"
+value="{{student.faOccupation}}">
+</td>
 
-    <td>
-    <b>Reg.No</b>
-    </td>
+</tr>
 
 
-    <td>
 
-    <input readonly
-    value="{{student.RegNo}}">
+<tr>
 
-    </td>
+<td><b>Reg.No</b></td>
 
+<td>
+<input readonly
+value="{{student.RegNo}}">
+</td>
 
 
-    <td>
-    <b>DOB</b>
-    </td>
+<td><b>Mother Name</b></td>
 
+<td>
+<input readonly
+name="MotherName"
+value="{{student.MotherName}}">
+</td>
 
-    <td>
 
-    <input readonly
-    type="date"
-    name="DOB"
-    value="{{student.DOB}}">
+<td><b>Mother Occupation</b></td>
 
-    </td>
+<td>
+<input readonly
+name="moOccupation"
+value="{{student.moOccupation}}">
+</td>
 
+</tr>
 
 
-    <td>
-    <b>Community</b>
-    </td>
 
 
-    <td>
+<tr>
 
-    <input readonly
-    name="Community"
-    value="{{student.Community}}">
+<td><b>DOB</b></td>
 
-    </td>
+<td>
+<input readonly
+type="date"
+name="DOB"
+value="{{student.DOB}}">
+</td>
 
 
+<td><b>Blood Group</b></td>
 
-    </tr>
+<td>
+<input readonly
+name="BloodGroup"
+value="{{student.BloodGroup}}">
+</td>
 
 
+<td><b>Community</b></td>
 
+<td>
+<input readonly
+name="Community"
+value="{{student.Community}}">
+</td>
 
+</tr>
 
 
-    <tr>
 
 
-    <td>
-    <b>Father Name</b>
-    </td>
+<tr>
 
+<td><b>UMIS ID</b></td>
 
-    <td colspan="2">
+<td colspan="2">
+<input readonly
+name="UmisID"
+value="{{student.UmisID}}">
+</td>
 
-    <input readonly
-    name="ParentName"
-    value="{{student.ParentName}}">
+<td>
+<b>Email</b>
+</td>
 
-    </td>
+<td colspan="2">
 
+<input readonly
+name="Email"
+value="{{student.Email}}">
 
+</td>
+</tr>
 
-    <td>
-    <b>Mother Name</b>
-    </td>
+<tr>
+<td>
+<b>Mobile</b>
+</td>
 
+<td>
 
-    <td colspan="2">
+<input readonly
+name="Mobile"
+value="{{student.Mobile}}">
 
-    <input readonly
-    name="MotherName"
-    value="{{student.MotherName}}">
+</td>
+<td><b>Address</b></td>
 
-    </td>
+<td colspan="3">
 
+<textarea readonly
+name="Address"
+rows="2">{{student.Address}}</textarea>
 
+</td>
 
-    </tr>
+</tr>
 
 
 
+<tr>
 
+<tr>
 
+<td>
+<b>Aadhar</b>
+</td>
 
+<td colspan="1">
 
-    <tr>
+<input readonly
+name="Aadhar"
+value="{{student.Aadhar}}">
 
+</td>
 
-    <td>
-    <b>Father Occupation</b>
-    </td>
+<td><b>Bank Name</b></td>
 
+<td colspan="3">
+<input readonly
+name="BankName"
+value="{{student.BankName}}">
+</td>
 
-    <td colspan="2">
+</tr>
+<tr>
 
-    <input readonly
-    name="faOccupation"
-    value="{{student.faOccupation}}">
 
-    </td>
 
+<td><b>Branch</b></td>
 
+<td colspan="3">
 
+<input readonly
+name="Branch"
+value="{{student.Branch}}">
 
-    <td>
-    <b>Mother Occupation</b>
-    </td>
+</td>
 
+<td><b>IFSC</b></td>
 
-    <td colspan="2">
+<td colspan="1">
 
-    <input readonly
-    name="moOccupation"
-    value="{{student.moOccupation}}">
+<input readonly
+name="IFSC"
+value="{{student.IFSC}}">
 
-    </td>
+</td>
+</tr>
 
+<tr>
 
+<td><b>Account No</b></td>
 
-    </tr>
+<td>
+<input readonly
+name="BankAccount"
+value="{{student.BankAccount}}">
+</td>
 
 
+</tr>
 
 
-
-
-    <tr>
-
-
-    <td>
-    <b>Address</b>
-    </td>
-
-
-    <td colspan="5">
-
-
-    <textarea readonly
-    name="Address"
-    rows="3">{{student.Address}}</textarea>
-
-
-    </td>
-
-
-    </tr>
-
-
-
-
-
-
-    <tr>
-
-
-    <td>
-    <b>Pincode</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="Pincode"
-    value="{{student.Pincode}}">
-
-    </td>
-
-
-
-    <td>
-    <b>Mobile</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="Mobile"
-    value="{{student.Mobile}}">
-
-    </td>
-
-
-
-
-    <td>
-    <b>First Graduate</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="FirstGraduate"
-    value="{{student.FirstGraduate}}">
-
-    </td>
-
-
-    </tr>
-
-
-
-
-
-
-    <tr>
-
-
-    <td>
-    <b>Bank Name</b>
-    </td>
-
-
-    <td colspan="5">
-
-
-    <input readonly
-    name="BankName"
-    value="{{student.BankName}}">
-
-
-    </td>
-
-
-    </tr>
-
-
-
-
-
-    <tr>
-
-
-    <td>
-    <b>Branch</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="Branch"
-    value="{{student.Branch}}">
-
-    </td>
-
-
-
-
-    <td>
-    <b>A/C No</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="BankAccount"
-    value="{{student.BankAccount}}">
-
-    </td>
-
-
-
-
-    <td>
-    <b>IFSC</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="IFSC"
-    value="{{student.IFSC}}">
-
-    </td>
-
-
-
-    </tr>
-
-
-
-
-
-
-    <tr>
-
-
-    <td>
-    <b>Aadhar</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="Aadhar"
-    value="{{student.Aadhar}}">
-
-    </td>
-
-
-
-    <td>
-    <b>Blood Group</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="BloodGroup"
-    value="{{student.BloodGroup}}">
-
-    </td>
-
-
-
-    <td>
-    <b>UMIS ID</b>
-    </td>
-
-
-    <td>
-
-    <input readonly
-    name="UmisID"
-    value="{{student.UmisID}}">
-
-    </td>
-
-
-    </tr>
-
-
-
-
-
-    <tr>
-
-    <td>
-    <b>Email</b>
-    </td>
-
-
-    <td colspan="5">
-
-    <input readonly
-    name="Email"
-    value="{{student.Email}}">
-
-    </td>
-
-
-    </tr>
-
-
-    </table>
+</table>
     <!-- ================= EXAMINATION RECORD ================= -->
 
     <br>
