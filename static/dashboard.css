@@ -765,97 +765,25 @@ tr:hover{
 
 
 /* MOBILE */
+@media(max-width:768px){
 
-@media(max-width:480px){
-
-
-    body{
-
-        font-size:14px;
-
+    .main-container{
+        display:flex;
+        flex-direction:row;
     }
 
-
-    .container{
-
-        padding:15px;
-
-        border-radius:8px;
-
+    .sidebar{
+        position:fixed;
+        width:80px;
+        height:100vh;
     }
 
-
-    h1{
-
-        font-size:26px;
-
+    .content{
+        margin-left:80px;
+        width:calc(100% - 80px);
     }
-
-
-    h2{
-
-        font-size:22px;
-
-    }
-
-
-    .cards{
-
-        grid-template-columns:1fr;
-
-        gap:15px;
-
-    }
-
-
-    .card{
-
-        min-height:140px;
-
-        padding:20px;
-
-    }
-
-
-    .card i{
-
-        font-size:35px;
-
-    }
-
-
-    .card h2{
-
-        font-size:32px;
-
-    }
-
-
-    button,
-    .btn{
-
-        width:100%;
-
-    }
-
-
-    table{
-
-        font-size:13px;
-
-    }
-
-
-    th,
-    td{
-
-        padding:8px;
-
-    }
-
 
 }
-
 
 /* ==========================================
    PRINT SUPPORT
