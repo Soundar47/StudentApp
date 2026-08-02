@@ -15,6 +15,7 @@ import json
 import pandas as pd
 
 from werkzeug.utils import secure_filename
+from functools import wraps
 
 # ==========================================
 # FLASK APP
@@ -283,6 +284,31 @@ PG_COLUMNS = COMMON_COLUMNS + [
 
 ]
 
+
+# ==========================================
+# LOGIN REQUIRED DECORATOR
+# ==========================================
+#
+# Every admin-only route must confirm session["admin"] is set,
+# both for direct URL access and for browser Back/Forward
+# navigation after logout. Wrapping the check in a decorator
+# means every protected route gets the same check, and a new
+# route can't accidentally be added without it.
+
+def login_required(view_func):
+
+    @wraps(view_func)
+    def wrapped(*args, **kwargs):
+
+        if not session.get("admin"):
+
+            return redirect(
+                url_for("admin_login")
+            )
+
+        return view_func(*args, **kwargs)
+
+    return wrapped
 
 
 # ==========================================
@@ -581,25 +607,38 @@ def admin_login():
 @app.route("/logout")
 def logout():
 
-
-    session.pop(
-        "admin",
-        None
-    )
-
-
     write_log(
         "Admin Logout"
     )
 
+    # Clear the whole session (not just the "admin" key) so no
+    # leftover session data (last_login, etc.) survives logout.
+    session.clear()
 
     return redirect(
         url_for("admin_login")
     )
 
 
+# ==========================================
+# NO-CACHE FOR PROTECTED PAGES
+# ==========================================
+#
+# Without this, the browser can serve the admin dashboard HTML
+# straight from its cache when the Back button is pressed after
+# logout — even though the session is gone. These headers force
+# the browser to always re-request the page, so the server-side
+# login_required check in each route actually runs and redirects
+# to the login page.
 
+@app.after_request
+def add_no_cache_headers(response):
 
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    return response
 
 
 # ==========================================
@@ -617,10 +656,8 @@ def home():
 # ==========================================
 
 @app.route("/admin")
+@login_required
 def admin():
-
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
 
     ug_batches = []
     pg_batches = []
@@ -752,15 +789,8 @@ def admin():
     "/upload-data",
     methods=["POST"]
 )
+@login_required
 def upload_data():
-
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
 
 
     course=request.form["course"].upper()
@@ -884,15 +914,8 @@ def upload_data():
 
 
 @app.route("/add-student")
+@login_required
 def add_student():
-
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
 
 
     course=request.args.get(
@@ -942,6 +965,7 @@ def add_student():
     "/save-new-student",
     methods=["POST"]
 )
+@login_required
 def save_new_student():
 
 
@@ -1045,10 +1069,8 @@ def save_new_student():
 # ==========================================
 
 @app.route("/save-pg", methods=["POST"])
+@login_required
 def save_pg():
-
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
 
     course = request.form["course"].upper()
     batch = request.form["batch"].replace("-", "_")
@@ -1125,10 +1147,8 @@ def save_pg():
 # ==========================================
 
 @app.route("/save-ug", methods=["POST"])
+@login_required
 def save_ug():
-
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
 
     course = request.form["course"].upper()
     batch = request.form["batch"].replace("-", "_")
@@ -1205,14 +1225,8 @@ def save_ug():
 # ==========================================
 
 @app.route("/activity-log")
+@login_required
 def activity_log():
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
 
     logs=[]
 
@@ -1240,14 +1254,8 @@ def activity_log():
 # ==========================================
 
 @app.route("/delete-student", methods=["POST"])
+@login_required
 def delete_student():
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
 
     course=request.form["course"]
 
@@ -1293,14 +1301,8 @@ def delete_student():
     "/change-password",
     methods=["GET","POST"]
 )
+@login_required
 def change_password():
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
 
     if request.method=="POST":
 
@@ -1335,14 +1337,8 @@ def change_password():
 # ==========================================
 
 @app.route("/view-students", methods=["GET", "POST"])
+@login_required
 def view_students():
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
 
     students = []
 
@@ -1412,14 +1408,8 @@ def view_students():
 # ==========================================
 
 @app.route("/clear-log", methods=["POST"])
+@login_required
 def clear_log():
-
-    if not session.get("admin"):
-
-        return redirect(
-            url_for("admin_login")
-        )
-
 
     if os.path.exists(LOG_FILE):
 
@@ -1443,6 +1433,7 @@ def clear_log():
 #  TIME TABLE
 # ==========================================
 @app.route("/timetable")
+@login_required
 def timetable():
     return render_template("time_table.html")
 # ==========================================
@@ -1450,10 +1441,8 @@ def timetable():
 # ==========================================
 
 @app.route("/delete-batch", methods=["POST"])
+@login_required
 def delete_batch():
-
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
 
     course = request.form["course"].upper()
     batch = request.form["batch"].strip().replace("-", "_")
@@ -1478,11 +1467,8 @@ def delete_batch():
 # ADD BATCHES
 # ==========================================
 @app.route("/add-batch", methods=["POST"])
+@login_required
 def add_batch():
-
-    if not session.get("admin"):
-        return redirect(url_for("admin_login"))
-
 
     course = request.form["course"].upper()
 
@@ -1513,6 +1499,7 @@ def add_batch():
 # STUDENT SEARCH
 # ==========================================
 @app.route("/student-search", methods=["POST"])
+@login_required
 def student_search():
 
     course = request.form["course"].upper()
