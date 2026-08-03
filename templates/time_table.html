@@ -19,6 +19,12 @@
 
 <h1>College Timetable Management</h1>
 
+<p class="timetable-note">
+    Monday–Saturday &middot; P1: 9:00–10:00 &middot; P2: 10:00–11:00 &middot;
+    P3: 11:15–12:15 &middot; Lunch: 12:15–1:00 &middot;
+    P4: 1:00–2:00 &middot; P5: 2:00–3:00
+</p>
+
 <!-- ===============================
 TIMETABLE DETAILS
 ================================ -->
@@ -235,15 +241,15 @@ GENERATED TIMETABLE
 
 <th>Day</th>
 
-<th>P1</th>
+<th>P1<br><small>9:00–10:00</small></th>
 
-<th>P2</th>
+<th>P2<br><small>10:00–11:00</small></th>
 
-<th>P3</th>
+<th>P3<br><small>11:15–12:15</small></th>
 
-<th>P4</th>
+<th>P4<br><small>1:00–2:00</small></th>
 
-<th>P5</th>
+<th>P5<br><small>2:00–3:00</small></th>
 
 </tr>
 
@@ -371,7 +377,7 @@ Delete
 
 </button>
 
-<button onclick="window.print()">
+<button onclick="window.print()"  id="print"> 
 
 Print
 

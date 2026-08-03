@@ -1,620 +1,202 @@
-/* ===========================================
-   COLLEGE TIMETABLE MANAGEMENT SYSTEM
-   PART 1
-=========================================== */
-
-// ===========================================
-// CONSTANTS
-// ===========================================
-
 const periods = 5;
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-];
-
-// ===========================================
-// ELEMENTS
-// ===========================================
-
-const addBtn = document.getElementById("addSubject");
-const generateBtn = document.getElementById("generate");
-const rearrangeBtn = document.getElementById("rearrange");
 const subjectBody = document.getElementById("subjectBody");
 const generatedSection = document.getElementById("generatedSection");
+const tableBody = document.getElementById("tableBody");
+const departmentSelect = document.getElementById("department");
+const semesterSelect = document.getElementById("semester");
+const sectionSelect = document.getElementById("section");
+const facultyInput = document.getElementById("faculty");
 
-// Hide timetable initially
-generatedSection.style.display = "none";
-
-// ===========================================
-// ADD SUBJECT
-// ===========================================
-
-addBtn.addEventListener("click", addSubjectRow);
-
-function addSubjectRow() {
-
-    const row = document.createElement("tr");
-
-    row.innerHTML = `
-
-        <td contenteditable="true">
-            New Subject
-        </td>
-
-        <td>
-
-            <select class="subjectType">
-
-                <option value="Theory">
-                    Theory
-                </option>
-
-                <option value="Lab">
-                    Lab
-                </option>
-
-            </select>
-
-        </td>
-
-        <td>
-
-            <input
-                type="number"
-                min="0"
-                value="1">
-
-        </td>
-
-        <td>
-
-            <input
-                type="number"
-                min="0"
-                value="0">
-
-        </td>
-
-        <td>
-
-            <select
-                class="labPosition"
-                disabled>
-
-                <option value="Auto">
-                    Auto
-                </option>
-
-                <option value="First">
-                    P1-P3
-                </option>
-
-                <option value="Last">
-                    P3-P5
-                </option>
-
-            </select>
-
-        </td>
-
-        <td contenteditable="true">
-            Faculty
-        </td>
-
-        <td>
-
-            <button
-                class="deleteBtn">
-
-                Delete
-
-            </button>
-
-        </td>
-
-    `;
-
-    subjectBody.appendChild(row);
-
+function timetableKey() {
+    return ["collegeTimetable", departmentSelect.value, semesterSelect.value, sectionSelect.value]
+        .map(value => String(value).replace(/\s+/g, "_"))
+        .join("_");
 }
 
-// ===========================================
-// DELETE SUBJECT
-// ===========================================
+function escapeHtml(value) {
+    const element = document.createElement("div");
+    element.textContent = value;
+    return element.innerHTML;
+}
 
-document.addEventListener("click", function (e) {
+function subjectRow(subject = "New Subject", type = "Theory", weeklyPeriods = 1, labs = 0, position = "Auto", faculty = "Faculty") {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td contenteditable="true">${escapeHtml(subject)}</td>
+        <td><select class="subjectType"><option value="Theory">Theory</option><option value="Lab">Lab</option></select></td>
+        <td><input type="number" min="0" value="${weeklyPeriods}"></td>
+        <td><input type="number" min="0" value="${labs}"></td>
+        <td><select class="labPosition"><option value="Auto">Auto</option><option value="First">P1-P3</option><option value="Last">P3-P5</option></select></td>
+        <td contenteditable="true">${escapeHtml(faculty)}</td>
+        <td><button type="button" class="deleteBtn">Delete</button></td>`;
+    row.querySelector(".subjectType").value = type;
+    row.querySelector(".labPosition").value = position;
+    updateLabControls(row);
+    return row;
+}
 
-    if (e.target.classList.contains("deleteBtn")) {
-
-        if (confirm("Delete this subject?")) {
-
-            e.target.closest("tr").remove();
-
-        }
-
-    }
-
-});
-
-// ===========================================
-// ENABLE / DISABLE LAB POSITION
-// ===========================================
-
-document.addEventListener("change", function (e) {
-
-    if (!e.target.classList.contains("subjectType"))
-        return;
-
-    const row =
-        e.target.closest("tr");
-
-    const type =
-        e.target.value;
-
-    const labPosition =
-        row.querySelector(".labPosition");
-
-    if (type === "Theory") {
-
-        labPosition.disabled = true;
-
-        labPosition.value = "Auto";
-
-    }
-
-    else {
-
-        labPosition.disabled = false;
-
-    }
-
-});
-/* ===========================================
-   PART 2
-   READ SUBJECTS & HELPER FUNCTIONS
-=========================================== */
-
-// ===========================================
-// READ SUBJECT MASTER
-// ===========================================
+function updateLabControls(row) {
+    const isLab = row.querySelector(".subjectType").value === "Lab";
+    const periodsInput = row.cells[2].querySelector("input");
+    const labsInput = row.cells[3].querySelector("input");
+    const position = row.querySelector(".labPosition");
+    periodsInput.disabled = isLab;
+    labsInput.disabled = !isLab;
+    position.disabled = !isLab;
+    if (isLab && Number(labsInput.value) === 0) labsInput.value = 1;
+    if (!isLab) position.value = "Auto";
+}
 
 function getSubjects() {
-
-    const rows =
-        document.querySelectorAll("#subjectBody tr");
-
-    let subjects = [];
-
-    rows.forEach(row => {
-
-        const subject =
-            row.cells[0].innerText.trim();
-
-        const type =
-            row.cells[1]
-            .querySelector("select").value;
-
-        const periods =
-            parseInt(
-                row.cells[2]
-                .querySelector("input").value
-            ) || 0;
-
-        const labs =
-            parseInt(
-                row.cells[3]
-                .querySelector("input").value
-            ) || 0;
-
-        const labPosition =
-            row.cells[4]
-            .querySelector("select").value;
-
-        const faculty =
-            row.cells[5]
-            .innerText.trim();
-
-        subjects.push({
-
-            subject,
-            type,
-            periods,
-            labs,
-            labPosition,
-            faculty
-
-        });
-
-    });
-
-    return subjects;
-
+    return [...subjectBody.querySelectorAll("tr")].map(row => ({
+        subject: row.cells[0].innerText.trim(),
+        type: row.querySelector(".subjectType").value,
+        periods: Number(row.cells[2].querySelector("input").value) || 0,
+        labs: Number(row.cells[3].querySelector("input").value) || 0,
+        labPosition: row.querySelector(".labPosition").value,
+        faculty: row.cells[5].innerText.trim()
+    }));
 }
-
-// ===========================================
-// CLEAR TIMETABLE
-// ===========================================
 
 function clearTable() {
-
-    const rows =
-        document.querySelectorAll("#tableBody tr");
-
-    rows.forEach(row => {
-
-        for (let i = 1; i <= periods; i++) {
-
-            row.cells[i].innerHTML = "";
-
-            row.cells[i].classList.remove("lab");
-
+    [...tableBody.rows].forEach(row => {
+        for (let column = 1; column <= periods; column += 1) {
+            row.cells[column].innerHTML = "";
+            row.cells[column].classList.remove("lab");
+            row.cells[column].contentEditable = "false";
         }
-
     });
-
 }
 
-// ===========================================
-// SHUFFLE
-// ===========================================
-
-function shuffle(array) {
-
-    for (let i = array.length - 1; i > 0; i--) {
-
-        const j =
-            Math.floor(
-                Math.random() * (i + 1)
-            );
-
-        [array[i], array[j]] =
-        [array[j], array[i]];
-
-    }
-
+function lessonHtml(subject, faculty) {
+    return `<strong>${escapeHtml(subject)}</strong><br><small>${escapeHtml(faculty)}</small>`;
 }
 
-// ===========================================
-// GENERATE BUTTON
-// ===========================================
-
-generateBtn.addEventListener("click", function () {
-
-    generateTimeTable();
-
-    generatedSection.style.display = "block";
-
-});
-
-// ===========================================
-// REARRANGE BUTTON
-// ===========================================
-
-rearrangeBtn.addEventListener("click", function () {
-
-    generateTimeTable();
-
-});
-
-// ===========================================
-// RANDOM EMPTY DAY
-// ===========================================
-
-function getAvailableDay(usedDays) {
-
-    let available = [];
-
-    for (let i = 0; i < days.length; i++) {
-
-        if (!usedDays.includes(i)) {
-
-            available.push(i);
-
-        }
-
-    }
-
-    if (available.length === 0)
-        return -1;
-
-    return available[
-        Math.floor(
-            Math.random() *
-            available.length
-        )
-    ];
-
+function shuffled(values) {
+    return [...values].sort(() => Math.random() - 0.5);
 }
-/* ===========================================
-   PART 3
-   SMART TIMETABLE GENERATOR
-=========================================== */
 
 function generateTimeTable() {
+    const subjects = getSubjects();
+    const invalid = subjects.find(item => !item.subject || !item.faculty);
+    if (invalid) {
+        alert("Enter a subject name and faculty for every row.");
+        return;
+    }
+
+    const requiredSlots = subjects.reduce((total, item) => total + (item.type === "Lab" ? item.labs * 3 : item.periods), 0);
+    if (requiredSlots > days.length * periods) {
+        alert(`The selected subjects need ${requiredSlots} slots, but this timetable has only ${days.length * periods} slots.`);
+        return;
+    }
+
+    const labSessions = subjects.flatMap(item =>
+        item.type === "Lab" ? Array.from({ length: item.labs }, () => item) : []
+    );
+    if (labSessions.length > days.length) {
+        alert("A maximum of six 3-period lab sessions can fit in this timetable.");
+        return;
+    }
 
     clearTable();
+    const rows = [...tableBody.rows];
+    const availableDays = shuffled(rows.map((_, index) => index));
 
-    const rows =
-    document.querySelectorAll("#tableBody tr");
-
-    const subjects =
-    getSubjects();
-
-    let theorySubjects = [];
-
-    let labSubjects = [];
-
-    // =======================================
-    // CREATE SUBJECT LIST
-    // =======================================
-
-    subjects.forEach(sub => {
-
-        if (sub.type === "Theory") {
-
-            for (let i = 0; i < sub.periods; i++) {
-
-                theorySubjects.push({
-
-                    name: sub.subject,
-
-                    faculty: sub.faculty
-
-                });
-
-            }
-
+    labSessions.forEach((lab, index) => {
+        const row = rows[availableDays[index]];
+        const starts = lab.labPosition === "First" ? [1] : lab.labPosition === "Last" ? [3] : shuffled([1, 3]);
+        const start = starts[0];
+        for (let column = start; column < start + 3; column += 1) {
+            row.cells[column].innerHTML = lessonHtml(lab.subject, lab.faculty);
+            row.cells[column].classList.add("lab");
         }
-
-        else {
-
-            for (let i = 0; i < sub.labs; i++) {
-
-                labSubjects.push({
-
-                    name: sub.subject,
-
-                    faculty: sub.faculty,
-
-                    position: sub.labPosition
-
-                });
-
-            }
-
-        }
-
     });
 
-    shuffle(theorySubjects);
-
-    shuffle(labSubjects);
-
-    // =======================================
-    // PLACE LABS
-    // =======================================
-
-    let usedDays = [];
-
-    labSubjects.forEach(lab => {
-
-        let day =
-        getAvailableDay(usedDays);
-
-        if (day == -1)
-            return;
-
-        usedDays.push(day);
-
-        const row =
-        rows[day];
-
-        let start;
-
-        if (lab.position == "First") {
-
-            start = 1;
-
-        }
-
-        else if (lab.position == "Last") {
-
-            start = 3;
-
-        }
-
-        else {
-
-            start =
-            Math.random() < 0.5
-            ? 1
-            : 3;
-
-        }
-
-        for (let i = start; i < start + 3; i++) {
-
-            row.cells[i].innerHTML =
-
-                `
-                <strong>${lab.name}</strong>
-                <br>
-                <small>${lab.faculty}</small>
-                `;
-
-            row.cells[i]
-            .classList.add("lab");
-
-        }
-
-    });
-
-    // =======================================
-    // FILL THEORY SUBJECTS
-    // =======================================
-
-    let pointer = 0;
+    const remaining = subjects
+        .filter(item => item.type === "Theory")
+        .map(item => ({ ...item, remaining: item.periods }));
 
     rows.forEach(row => {
-
         let previous = "";
-
-        for (let i = 1; i <= periods; i++) {
-
-            if (row.cells[i].innerHTML != "")
-                continue;
-
-            if (pointer >= theorySubjects.length) {
-
-                shuffle(theorySubjects);
-
-                pointer = 0;
-
-            }
-
-            let current =
-            theorySubjects[pointer];
-
-            // Avoid same subject twice continuously
-
-            if (current.name == previous) {
-
-                shuffle(theorySubjects);
-
-                pointer = 0;
-
-                current =
-                theorySubjects[pointer];
-
-            }
-
-            row.cells[i].innerHTML =
-
-                `
-                ${current.name}
-                <br>
-                <small>${current.faculty}</small>
-                `;
-
-            previous =
-            current.name;
-
-            pointer++;
-
+        for (let column = 1; column <= periods; column += 1) {
+            if (row.cells[column].innerHTML) continue;
+            const candidates = remaining.filter(item => item.remaining > 0 && item.subject !== previous);
+            const pool = candidates.length ? candidates : remaining.filter(item => item.remaining > 0);
+            if (!pool.length) continue;
+            const highestCount = Math.max(...pool.map(item => item.remaining));
+            const selected = shuffled(pool.filter(item => item.remaining === highestCount))[0];
+            row.cells[column].innerHTML = lessonHtml(selected.subject, selected.faculty);
+            selected.remaining -= 1;
+            previous = selected.subject;
         }
-
     });
 
-    alert(
-        "Timetable Generated Successfully!"
-    );
-
+    generatedSection.style.display = "block";
 }
-/* ===========================================
-   PART 4A
-   SAVE TIMETABLE
-=========================================== */
-
-// ===========================================
-// BUTTON EVENTS
-// ===========================================
-
-document
-.getElementById("save")
-.addEventListener("click", saveTimeTable);
-
-document
-.getElementById("edit")
-.addEventListener("click", editTimeTable);
-
-document
-.getElementById("delete")
-.addEventListener("click", deleteTimeTable);
-
-// ===========================================
-// SAVE TIMETABLE
-// ===========================================
 
 function saveTimeTable() {
-
-    const table = [];
-
-    document
-    .querySelectorAll("#tableBody tr")
-    .forEach(row => {
-
-        let rowData = [];
-
-        row.querySelectorAll("td").forEach(cell => {
-
-            rowData.push(cell.innerHTML);
-
-        });
-
-        table.push(rowData);
-
-    });
-
     const timetable = {
-
-        department:
-        document.getElementById("department").value,
-
-        semester:
-        document.getElementById("semester").value,
-
-        section:
-        document.getElementById("section").value,
-
-        faculty:
-        document.getElementById("faculty").value,
-
-        table: table
-
+        department: departmentSelect.value,
+        semester: semesterSelect.value,
+        section: sectionSelect.value,
+        faculty: facultyInput.value,
+        table: [...tableBody.rows].map(row => [...row.cells].map(cell => cell.innerHTML))
     };
-
-    localStorage.setItem(
-
-        "collegeTimetable",
-
-        JSON.stringify(timetable)
-
-    );
-
+    localStorage.setItem(timetableKey(), JSON.stringify(timetable));
     lockTable();
-
-    alert(
-
-        "Timetable Saved Successfully."
-
-    );
-
+    alert("Timetable saved for this department, semester, and section.");
 }
 
-// ===========================================
-// LOCK TABLE
-// ===========================================
+function loadTimeTable() {
+    const saved = JSON.parse(localStorage.getItem(timetableKey()) || "null");
+    if (!saved) {
+        generatedSection.style.display = "none";
+        return;
+    }
+    saved.table.forEach((cells, rowIndex) => cells.forEach((html, columnIndex) => {
+        if (tableBody.rows[rowIndex] && tableBody.rows[rowIndex].cells[columnIndex]) {
+            tableBody.rows[rowIndex].cells[columnIndex].innerHTML = html;
+        }
+    }));
+    facultyInput.value = saved.faculty || "";
+    generatedSection.style.display = "block";
+    lockTable();
+}
+
+function editTimeTable() {
+    [...tableBody.rows].forEach(row => {
+        for (let column = 1; column <= periods; column += 1) row.cells[column].contentEditable = "true";
+    });
+}
 
 function lockTable() {
-
-    document
-    .querySelectorAll("#tableBody td")
-    .forEach((cell, index) => {
-
-        if (index % 6 != 0) {
-
-            cell.contentEditable = false;
-
-            cell.style.background = "#ffffff";
-
-        }
-
+    tableBody.querySelectorAll("td").forEach((cell, index) => {
+        if (index % (periods + 1) !== 0) cell.contentEditable = "false";
     });
-
 }
+
+function deleteTimeTable() {
+    if (confirm("Delete the saved timetable for this class?")) {
+        localStorage.removeItem(timetableKey());
+        clearTable();
+        generatedSection.style.display = "none";
+    }
+}
+
+document.getElementById("addSubject").addEventListener("click", () => subjectBody.appendChild(subjectRow()));
+document.getElementById("generate").addEventListener("click", generateTimeTable);
+document.getElementById("rearrange").addEventListener("click", generateTimeTable);
+document.getElementById("save").addEventListener("click", saveTimeTable);
+document.getElementById("edit").addEventListener("click", editTimeTable);
+document.getElementById("delete").addEventListener("click", deleteTimeTable);
+document.addEventListener("click", event => {
+    if (event.target.classList.contains("deleteBtn")) event.target.closest("tr").remove();
+});
+document.addEventListener("change", event => {
+    if (event.target.classList.contains("subjectType")) updateLabControls(event.target.closest("tr"));
+});
+[departmentSelect, semesterSelect, sectionSelect].forEach(element => element.addEventListener("change", loadTimeTable));
+subjectBody.querySelectorAll("tr").forEach(updateLabControls);
+loadTimeTable();

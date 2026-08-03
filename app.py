@@ -1498,14 +1498,19 @@ def add_batch():
 # ==========================================
 # STUDENT SEARCH
 # ==========================================
-@app.route("/student-search", methods=["POST"])
+@app.route("/student-search", methods=["GET", "POST"])
 @login_required
 def student_search():
 
-    course = request.form["course"].upper()
-    batch = request.form["batch"].strip().replace("-", "_")
-    search_type = request.form["search_type"]
-    keyword = request.form["keyword"].strip()
+    # Searching only reads data, so searches submitted from the UI use GET.
+    # This keeps the search URL in browser history without a POST resubmission
+    # warning when the user clicks Back or Refresh.
+    search_data = request.args if request.method == "GET" else request.form
+
+    course = search_data["course"].upper()
+    batch = search_data["batch"].strip().replace("-", "_")
+    search_type = search_data["search_type"]
+    keyword = search_data["keyword"].strip()
 
     df = load_csv(course, batch)
     if df is None:

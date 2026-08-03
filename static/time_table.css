@@ -336,9 +336,18 @@ button{
 #addSubject{
 
     background:#2e7d32;
+}
+#rearrange{
+
+    background:#2597c4;
 
 }
 
+#print{
+
+    background:#1565c0;
+
+}
 /* Generate */
 
 #generate{
@@ -412,6 +421,19 @@ tbody tr:hover{
 #timeTable td:empty::before{
     content:"-";
     color:#b0b0b0;
+}
+
+.timetable-note{
+    margin:0 0 20px;
+    color:#455a64;
+    line-height:1.6;
+}
+
+#timeTable th small{
+    display:block;
+    margin-top:4px;
+    font-weight:400;
+    opacity:.9;
 }
 
 /* ======================================
