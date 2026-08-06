@@ -986,6 +986,11 @@ def save_new_student():
             url_for("admin")
         )
 
+    validation_error = validate_student_details(request.form, df, is_new=True)
+    if validation_error:
+        flash(validation_error, "error")
+        return redirect(url_for("add_student", course=course, batch=batch))
+
 
 
     new_student={}
@@ -1040,6 +1045,9 @@ def save_new_student():
 
 
                 new_student["Photo"]=filename
+            else:
+                flash("Photo must be a JPG, JPEG, or PNG file.", "error")
+                return redirect(url_for("add_student", course=course, batch=batch))
 
 
 
@@ -1061,9 +1069,8 @@ def save_new_student():
 
 
 
-    return redirect(
-        url_for("admin")
-    )
+    flash("Student record saved successfully.", "success")
+    return redirect(url_for("view_students", course=course, batch=batch))
 # ==========================================
 # SAVE PG STUDENT EDIT
 # ==========================================
@@ -1349,16 +1356,16 @@ def view_students():
     batch = ""
 
 
-    if request.method == "POST":
+    if request.method == "POST" or request.args.get("course"):
 
-
-        course = request.form.get(
+        source = request.form if request.method == "POST" else request.args
+        course = source.get(
             "course",
             ""
         ).upper()
 
 
-        batch = request.form.get(
+        batch = source.get(
             "batch",
             ""
         )
@@ -1569,3 +1576,22 @@ if __name__=="__main__":
         port=5000,
         debug=True
     )
+
+
+def validate_student_details(form, dataframe, is_new=False):
+    """Return a clear validation message for the fields common to all records."""
+    regno = form.get("RegNo", "").strip()
+    name = form.get("Name", "").strip()
+
+    if not regno:
+        return "Register number is required."
+    if not name:
+        return "Student name is required."
+    if is_new and not dataframe[dataframe["RegNo"].astype(str) == regno].empty:
+        return "A student with this register number already exists in this batch."
+
+    email = form.get("Email", "").strip()
+    if email and ("@" not in email or email.startswith("@") or email.endswith("@")):
+        return "Enter a valid email address."
+
+    return ""

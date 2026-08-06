@@ -206,6 +206,15 @@ body{
 
 }
 
+/* Keep labels compact and reserve more room for student values. */
+.info td:nth-child(odd){
+
+    width:12%;
+
+    white-space:nowrap;
+
+}
+
 .info input{
 
     width:100%;
@@ -488,13 +497,13 @@ body{
    BACK BUTTON
 ========================== */
 
-.button-bar a button{
+.button-bar .back-btn{
 
     background:#616161;
 
 }
 
-.button-bar a button:hover{
+.button-bar .back-btn:hover{
 
     background:#424242;
 

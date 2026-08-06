@@ -135,6 +135,8 @@ textarea{
 
     justify-content:center;
 
+    align-items:center;
+
     gap:20px;
 
     margin-top:30px;
@@ -169,6 +171,52 @@ textarea{
 
 }
 
+/* Reset */
+
+.reset-btn{
+
+    background:#6c757d;
+
+    color:white;
+
+    border:none;
+
+}
+
+.reset-btn:hover{
+
+    background:#545b62;
+
+}
+
+.save-btn,
+.reset-btn,
+.back-btn{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    min-height:43px;
+
+    padding:12px 30px;
+
+    font-size:16px;
+
+    line-height:1;
+
+    border-radius:6px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+    text-decoration:none;
+
+}
+
 /* Back */
 
 .back-btn{
@@ -176,18 +224,6 @@ textarea{
     background:#dc3545;
 
     color:white;
-
-    border:none;
-
-    padding:12px 30px;
-
-    font-size:16px;
-
-    border-radius:6px;
-
-    cursor:pointer;
-
-    transition:.3s;
 
 }
 
@@ -218,6 +254,7 @@ textarea{
 }
 
 .save-btn,
+.reset-btn,
 .back-btn{
 
     width:100%;
