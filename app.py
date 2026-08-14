@@ -4,19 +4,24 @@ from flask import (
     request,
     redirect,
     url_for,
-    session
+    session,
+    send_file,
+    flash
 )
-from flask import flash
 
 from datetime import datetime
 
 import os
 import json
+import shutil
+import tempfile
+import zipfile
+import stat
+
 import pandas as pd
 
 from werkzeug.utils import secure_filename
 from functools import wraps
-
 # ==========================================
 # FLASK APP
 # ==========================================
@@ -67,7 +72,71 @@ os.makedirs(
 
 app.config["PHOTO_FOLDER"] = PHOTO_FOLDER
 
+# ==========================================
+# BACKUP FOLDER
+# ==========================================
 
+BACKUP_FOLDER = "backups"
+
+os.makedirs(
+    BACKUP_FOLDER,
+    exist_ok=True
+)
+# ==========================================
+# DOB FORMATTING
+# ==========================================
+
+def format_dob_for_html(dob):
+    """
+    Convert DOB into HTML date input format.
+
+    CSV / stored DOB:
+        15-08-2000
+
+    HTML <input type="date">:
+        2000-08-15
+    """
+
+    if not dob:
+        return ""
+
+    try:
+        dob = str(dob).strip()
+
+        return pd.to_datetime(
+            dob,
+            dayfirst=True
+        ).strftime("%Y-%m-%d")
+
+    except (ValueError, TypeError):
+        return ""
+
+
+def format_dob_for_csv(dob):
+    """
+    Convert HTML date input format into
+    standard CSV format.
+
+    HTML:
+        2000-08-15
+
+    CSV:
+        15-08-2000
+    """
+
+    if not dob:
+        return ""
+
+    try:
+        dob = str(dob).strip()
+
+        return pd.to_datetime(
+            dob,
+            format="%Y-%m-%d"
+        ).strftime("%d-%m-%Y")
+
+    except (ValueError, TypeError):
+        return ""
 # ==========================================
 # FILES
 # ==========================================
@@ -510,6 +579,526 @@ def save_csv(df,course,batch):
         encoding="utf-8-sig"
     )
 # ==========================================
+# BACKUP & RESTORE SYSTEM
+# ==========================================
+
+BACKUP_ALLOWED_FILES = {
+    "admin.json",
+    "activity.log"
+}
+
+
+def get_backup_filename():
+    """
+    Generate a unique backup filename.
+    """
+
+    timestamp = datetime.now().strftime(
+        "%Y-%m-%d_%H-%M-%S"
+    )
+
+    return f"StudentApp_Backup_{timestamp}.zip"
+
+
+def is_safe_zip_member(member_name):
+    """
+    Prevent ZIP path traversal attacks.
+
+    Reject paths such as:
+        ../../admin.json
+        ../../../something
+    """
+
+    normalized = os.path.normpath(member_name)
+
+    if normalized.startswith(".."):
+        return False
+
+    if os.path.isabs(normalized):
+        return False
+
+    return True
+
+
+def is_allowed_backup_member(member_name):
+    """
+    Only allow files/directories belonging to our
+    StudentApp backup structure.
+    """
+
+    normalized = member_name.replace("\\", "/").strip("/")
+
+    allowed_prefixes = (
+        "data/",
+        "static/photos/",
+        "uploads/"
+    )
+
+    if normalized in BACKUP_ALLOWED_FILES:
+        return True
+
+    for prefix in allowed_prefixes:
+        if normalized.startswith(prefix):
+            return True
+
+    return False
+
+
+def validate_backup_zip(zip_path):
+    """
+    Validate that a ZIP is a StudentApp backup
+    and doesn't contain dangerous paths/files.
+    """
+
+    try:
+
+        with zipfile.ZipFile(zip_path, "r") as archive:
+
+            members = archive.infolist()
+
+            if not members:
+                return False, "Backup ZIP is empty."
+
+            valid_file_found = False
+
+            for member in members:
+
+                name = member.filename
+
+                # Path traversal protection
+                if not is_safe_zip_member(name):
+                    return False, f"Unsafe path found: {name}"
+
+                # Symlink protection
+                mode = member.external_attr >> 16
+
+                if stat.S_ISLNK(mode):
+                    return False, "Backup contains an unsafe symbolic link."
+
+                # Ignore directory entries
+                if name.endswith("/"):
+                    continue
+
+                if not is_allowed_backup_member(name):
+                    return False, f"Invalid backup file: {name}"
+
+                valid_file_found = True
+
+            if not valid_file_found:
+                return False, "Backup contains no valid application files."
+
+        return True, "Backup is valid."
+
+    except zipfile.BadZipFile:
+        return False, "The uploaded file is not a valid ZIP backup."
+
+    except Exception as e:
+        return False, str(e)
+
+
+def create_backup(reason="Manual Backup"):
+    """
+    Create a complete ZIP backup of the StudentApp.
+
+    Returns:
+        backup_path
+    """
+
+    filename = get_backup_filename()
+
+    backup_path = os.path.join(
+        BACKUP_FOLDER,
+        filename
+    )
+
+    with zipfile.ZipFile(
+        backup_path,
+        "w",
+        compression=zipfile.ZIP_DEFLATED
+    ) as archive:
+
+        # -----------------------------
+        # DATA
+        # -----------------------------
+
+        if os.path.exists(DATA_FOLDER):
+
+            for root, dirs, files in os.walk(DATA_FOLDER):
+
+                for file in files:
+
+                    full_path = os.path.join(
+                        root,
+                        file
+                    )
+
+                    archive_name = os.path.relpath(
+                        full_path,
+                        "."
+                    )
+
+                    archive.write(
+                        full_path,
+                        archive_name
+                    )
+
+        # -----------------------------
+        # PHOTOS
+        # -----------------------------
+
+        if os.path.exists(PHOTO_FOLDER):
+
+            for root, dirs, files in os.walk(PHOTO_FOLDER):
+
+                for file in files:
+
+                    full_path = os.path.join(
+                        root,
+                        file
+                    )
+
+                    archive_name = os.path.relpath(
+                        full_path,
+                        "."
+                    )
+
+                    archive.write(
+                        full_path,
+                        archive_name
+                    )
+
+        # -----------------------------
+        # UPLOADS
+        # -----------------------------
+
+        uploads_folder = "uploads"
+
+        if os.path.exists(uploads_folder):
+
+            for root, dirs, files in os.walk(
+                uploads_folder
+            ):
+
+                for file in files:
+
+                    full_path = os.path.join(
+                        root,
+                        file
+                    )
+
+                    archive_name = os.path.relpath(
+                        full_path,
+                        "."
+                    )
+
+                    archive.write(
+                        full_path,
+                        archive_name
+                    )
+
+        # -----------------------------
+        # ADMIN FILE
+        # -----------------------------
+
+        if os.path.exists(ADMIN_FILE):
+
+            archive.write(
+                ADMIN_FILE,
+                ADMIN_FILE
+            )
+
+        # -----------------------------
+        # ACTIVITY LOG
+        # -----------------------------
+
+        if os.path.exists(LOG_FILE):
+
+            archive.write(
+                LOG_FILE,
+                LOG_FILE
+            )
+
+    write_log(
+        f"Backup Created | {reason} | {filename}"
+    )
+
+    return backup_path
+
+
+def restore_backup(zip_path):
+    """
+    Safely restore a StudentApp backup.
+
+    Before restoring, the current application is
+    automatically backed up.
+    """
+
+    valid, message = validate_backup_zip(
+        zip_path
+    )
+
+    if not valid:
+
+        return False, message
+
+    # ------------------------------------------
+    # SAFETY BACKUP BEFORE RESTORE
+    # ------------------------------------------
+
+    try:
+
+        safety_backup = create_backup(
+            "Automatic Safety Backup Before Restore"
+        )
+
+    except Exception as e:
+
+        return False, (
+            "Could not create safety backup. "
+            f"Restore cancelled: {e}"
+        )
+
+    # ------------------------------------------
+    # TEMPORARY EXTRACTION
+    # ------------------------------------------
+
+    temp_folder = tempfile.mkdtemp(
+        prefix="studentapp_restore_"
+    )
+
+    try:
+
+        with zipfile.ZipFile(
+            zip_path,
+            "r"
+        ) as archive:
+
+            archive.extractall(
+                temp_folder
+            )
+
+        # --------------------------------------
+        # RESTORE DATA
+        # --------------------------------------
+
+        extracted_data = os.path.join(
+            temp_folder,
+            "data"
+        )
+
+        if os.path.exists(extracted_data):
+
+            if os.path.exists(DATA_FOLDER):
+                shutil.rmtree(DATA_FOLDER)
+
+            shutil.copytree(
+                extracted_data,
+                DATA_FOLDER
+            )
+
+        # --------------------------------------
+        # RESTORE PHOTOS
+        # --------------------------------------
+
+        extracted_photos = os.path.join(
+            temp_folder,
+            "static",
+            "photos"
+        )
+
+        if os.path.exists(extracted_photos):
+
+            if os.path.exists(PHOTO_FOLDER):
+                shutil.rmtree(PHOTO_FOLDER)
+
+            os.makedirs(
+                PHOTO_FOLDER,
+                exist_ok=True
+            )
+
+            shutil.copytree(
+                extracted_photos,
+                PHOTO_FOLDER,
+                dirs_exist_ok=True
+            )
+
+        # --------------------------------------
+        # RESTORE UPLOADS
+        # --------------------------------------
+
+        extracted_uploads = os.path.join(
+            temp_folder,
+            "uploads"
+        )
+
+        if os.path.exists(extracted_uploads):
+
+            uploads_folder = "uploads"
+
+            if os.path.exists(uploads_folder):
+                shutil.rmtree(uploads_folder)
+
+            shutil.copytree(
+                extracted_uploads,
+                uploads_folder
+            )
+
+        # --------------------------------------
+        # RESTORE ADMIN
+        # --------------------------------------
+
+        extracted_admin = os.path.join(
+            temp_folder,
+            ADMIN_FILE
+        )
+
+        if os.path.exists(extracted_admin):
+
+            shutil.copy2(
+                extracted_admin,
+                ADMIN_FILE
+            )
+
+        # --------------------------------------
+        # RESTORE ACTIVITY LOG
+        # --------------------------------------
+
+        extracted_log = os.path.join(
+            temp_folder,
+            LOG_FILE
+        )
+
+        if os.path.exists(extracted_log):
+
+            shutil.copy2(
+                extracted_log,
+                LOG_FILE
+            )
+
+        write_log(
+            "Backup Restored Successfully"
+        )
+
+        return True, safety_backup
+
+    except Exception as e:
+
+        return False, (
+            "Restore failed. "
+            f"Your previous data is available in: "
+            f"{safety_backup}"
+        )
+
+    finally:
+
+        shutil.rmtree(
+            temp_folder,
+            ignore_errors=True
+        )
+# ==========================================
+# CREATE BACKUP ROUTE
+# ==========================================
+
+@app.route(
+    "/create-backup",
+    methods=["POST"]
+)
+@login_required
+def create_backup_route():
+
+    try:
+
+        backup_path = create_backup(
+            "Manual Backup"
+        )
+
+        filename = os.path.basename(
+            backup_path
+        )
+
+        flash(
+            f"Backup created successfully: {filename}",
+            "success"
+        )
+
+    except Exception as e:
+
+        flash(
+            f"Backup creation failed: {e}",
+            "error"
+        )
+
+    return redirect(
+        url_for("backup_restore")
+    )
+
+def get_backup_files():
+    """
+    Return available backup ZIP files,
+    newest first.
+    """
+
+    backups = []
+
+    if not os.path.exists(
+        BACKUP_FOLDER
+    ):
+        return backups
+
+    for filename in os.listdir(
+        BACKUP_FOLDER
+    ):
+
+        if not filename.lower().endswith(
+            ".zip"
+        ):
+            continue
+
+        path = os.path.join(
+            BACKUP_FOLDER,
+            filename
+        )
+
+        if not os.path.isfile(path):
+            continue
+
+        try:
+
+            size = os.path.getsize(path)
+
+            modified = os.path.getmtime(path)
+
+            backups.append({
+
+                "filename": filename,
+
+                "size": size,
+
+                "size_mb": round(
+                    size / (1024 * 1024),
+                    2
+                ),
+
+                "modified": datetime.fromtimestamp(
+                    modified
+                ).strftime(
+                    "%d-%m-%Y %I:%M:%S %p"
+                ),
+
+                "timestamp": modified
+
+            })
+
+        except OSError:
+            continue
+
+    backups.sort(
+        key=lambda x: x["timestamp"],
+        reverse=True
+    )
+
+    return backups
+# ==========================================
 # CREATE EMPTY BATCH
 # ==========================================
 
@@ -674,16 +1263,454 @@ def admin():
         if file.endswith(".csv"):
 
             batch = file.replace(".csv", "")
+
             ug_batches.append(batch)
 
-            df = load_csv("UG", batch)
+            df = load_csv(
+                "UG",
+                batch
+            )
 
             if df is not None:
+
                 total_ug_students += len(df)
 
     # -------------------------------
     # PG Batches & Students
     # -------------------------------
+
+    for file in os.listdir(PG_FOLDER):
+
+        if file.endswith(".csv"):
+
+            batch = file.replace(".csv", "")
+
+            pg_batches.append(batch)
+
+            df = load_csv(
+                "PG",
+                batch
+            )
+
+            if df is not None:
+
+                total_pg_students += len(df)
+
+    # -------------------------------
+    # Dashboard Statistics
+    # -------------------------------
+
+    total_students = (
+        total_ug_students
+        +
+        total_pg_students
+    )
+
+    total_ug_batches = len(
+        ug_batches
+    )
+
+    total_pg_batches = len(
+        pg_batches
+    )
+
+    total_batches = (
+        total_ug_batches
+        +
+        total_pg_batches
+    )
+
+    # -------------------------------
+    # Latest Uploaded Batch
+    # -------------------------------
+
+    latest_batch = "-"
+
+    all_batches = []
+
+    for batch in ug_batches:
+
+        all_batches.append(
+            ("UG", batch)
+        )
+
+    for batch in pg_batches:
+
+        all_batches.append(
+            ("PG", batch)
+        )
+
+    if all_batches:
+
+        latest_course, latest = sorted(
+            all_batches,
+            key=lambda x: x[1]
+        )[-1]
+
+        latest_batch = (
+            f"{latest_course} - {latest}"
+        )
+
+    # -------------------------------
+    # Last Login
+    # -------------------------------
+
+    last_login = session.get(
+        "last_login",
+        "-"
+    )
+
+    # -------------------------------
+    # Recent Activities
+    # -------------------------------
+
+    recent_logs = []
+
+    if os.path.exists(LOG_FILE):
+
+        with open(
+            LOG_FILE,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            recent_logs = [
+                line.strip()
+                for line in file.readlines()[-5:]
+            ]
+
+        recent_logs.reverse()
+
+    # -------------------------------
+    # IMPORTANT: RETURN TEMPLATE
+    # -------------------------------
+
+    return render_template(
+
+        "admin.html",
+
+        ug_batches=sorted(
+            ug_batches
+        ),
+
+        pg_batches=sorted(
+            pg_batches
+        ),
+
+        total_students=total_students,
+
+        total_ug_students=total_ug_students,
+
+        total_pg_students=total_pg_students,
+
+        total_ug_batches=total_ug_batches,
+
+        total_pg_batches=total_pg_batches,
+
+        total_batches=total_batches,
+
+        latest_batch=latest_batch,
+
+        last_login=last_login,
+
+        recent_logs=recent_logs
+
+    )
+# ==========================================
+# BACKUP & RESTORE PAGE
+# ==========================================
+
+@app.route("/backup-restore")
+@login_required
+def backup_restore():
+
+    backups = get_backup_files()
+
+    return render_template(
+        "backup_restore.html",
+        backups=backups
+    )
+# ==========================================
+# DOWNLOAD BACKUP
+# ==========================================
+
+@app.route(
+    "/download-backup/<filename>"
+)
+@login_required
+def download_backup(filename):
+
+    filename = secure_filename(
+        filename
+    )
+
+    path = os.path.join(
+        BACKUP_FOLDER,
+        filename
+    )
+
+    if not os.path.isfile(path):
+
+        flash(
+            "Backup file not found.",
+            "error"
+        )
+
+        return redirect(
+            url_for("backup_restore")
+        )
+
+    return send_file(
+        path,
+        as_attachment=True,
+        download_name=filename
+    )
+# ==========================================
+# UPLOAD BACKUP
+# ==========================================
+
+@app.route(
+    "/upload-backup",
+    methods=["POST"]
+)
+@login_required
+def upload_backup():
+
+    file = request.files.get(
+        "backup_file"
+    )
+
+    if not file or not file.filename:
+
+        flash(
+            "Please select a backup ZIP file.",
+            "error"
+        )
+
+        return redirect(
+            url_for("backup_restore")
+        )
+
+    filename = secure_filename(
+        file.filename
+    )
+
+    if not filename.lower().endswith(".zip"):
+
+        flash(
+            "Only ZIP backup files are allowed.",
+            "error"
+        )
+
+        return redirect(
+            url_for("backup_restore")
+        )
+
+    # Add upload timestamp to prevent accidental overwrite
+    timestamp = datetime.now().strftime(
+        "%Y%m%d_%H%M%S"
+    )
+
+    filename = (
+        f"Uploaded_{timestamp}_{filename}"
+    )
+
+    path = os.path.join(
+        BACKUP_FOLDER,
+        filename
+    )
+
+    try:
+
+        file.save(path)
+
+        valid, message = validate_backup_zip(
+            path
+        )
+
+        if not valid:
+
+            os.remove(path)
+
+            flash(
+                f"Invalid backup: {message}",
+                "error"
+            )
+
+            return redirect(
+                url_for("backup_restore")
+            )
+
+        write_log(
+            f"Backup Uploaded | {filename}"
+        )
+
+        flash(
+            f"Backup uploaded successfully: {filename}",
+            "success"
+        )
+
+    except Exception as e:
+
+        if os.path.exists(path):
+            os.remove(path)
+
+        flash(
+            f"Backup upload failed: {e}",
+            "error"
+        )
+
+    return redirect(
+        url_for("backup_restore")
+    )
+# ==========================================
+# RESTORE BACKUP
+# ==========================================
+
+@app.route(
+    "/restore-backup",
+    methods=["POST"]
+)
+@login_required
+def restore_backup_route():
+
+    filename = request.form.get(
+        "filename",
+        ""
+    )
+
+    filename = secure_filename(
+        filename
+    )
+
+    if not filename:
+
+        flash(
+            "Invalid backup filename.",
+            "error"
+        )
+
+        return redirect(
+            url_for("backup_restore")
+        )
+
+    path = os.path.join(
+        BACKUP_FOLDER,
+        filename
+    )
+
+    if not os.path.isfile(path):
+
+        flash(
+            "Backup file not found.",
+            "error"
+        )
+
+        return redirect(
+            url_for("backup_restore")
+        )
+
+    success, result = restore_backup(
+        path
+    )
+
+    if success:
+
+        flash(
+            "Backup restored successfully. "
+            "A safety backup was created automatically.",
+            "success"
+        )
+
+        # The restored admin.json may contain a different
+        # password, so the current session should be removed.
+        session.clear()
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+    flash(
+        f"Restore failed: {result}",
+        "error"
+    )
+
+    return redirect(
+        url_for("backup_restore")
+    )
+# ==========================================
+# DELETE BACKUP
+# ==========================================
+
+@app.route(
+    "/delete-backup",
+    methods=["POST"]
+)
+@login_required
+def delete_backup():
+
+    filename = request.form.get(
+        "filename",
+        ""
+    )
+
+    filename = secure_filename(
+        filename
+    )
+
+    if not filename:
+
+        flash(
+            "Invalid backup filename.",
+            "error"
+        )
+
+        return redirect(
+            url_for("backup_restore")
+        )
+
+    path = os.path.join(
+        BACKUP_FOLDER,
+        filename
+    )
+
+    if not os.path.isfile(path):
+
+        flash(
+            "Backup file not found.",
+            "error"
+        )
+
+        return redirect(
+            url_for("backup_restore")
+        )
+
+    try:
+
+        os.remove(path)
+
+        write_log(
+            f"Backup Deleted | {filename}"
+        )
+
+        flash(
+            "Backup deleted successfully.",
+            "success"
+        )
+
+    except Exception as e:
+
+        flash(
+            f"Could not delete backup: {e}",
+            "error"
+        )
+
+    return redirect(
+        url_for("backup_restore")
+    )
+# -------------------------------
+# PG Batches & Students
+# -------------------------------
 
     for file in os.listdir(PG_FOLDER):
 
@@ -1004,6 +2031,9 @@ def save_new_student():
             col,
             ""
         )
+        new_student["DOB"] = format_dob_for_csv(
+    new_student.get("DOB", "")
+)
 
 
 
@@ -1116,6 +2146,10 @@ def save_pg():
 
         if column in request.form:
             df.loc[row, column] = request.form.get(column, "")
+    # Convert DOB from HTML format to CSV format
+    df.loc[row, "DOB"] = format_dob_for_csv(
+    df.loc[row, "DOB"]
+)
 
     # Upload New Photo
     if "Photo" in request.files:
@@ -1142,13 +2176,19 @@ def save_pg():
 
     student = df.loc[row].to_dict()
 
+    student = df.loc[row].to_dict()
+
+    student["DOB"] = format_dob_for_html(
+    student.get("DOB", "")
+)
+
     return render_template(
-        "pg_result.html",
-        student=student,
-        course=course,
-        batch=batch,
-        message="Student details updated successfully"
-    )
+    "pg_result.html",
+    student=student,
+    course=course,
+    batch=batch,
+    message="Student details updated successfully"
+)
 # ==========================================
 # SAVE UG STUDENT EDIT
 # ==========================================
@@ -1194,6 +2234,10 @@ def save_ug():
 
         if column in request.form:
             df.loc[row, column] = request.form.get(column, "")
+            # Convert DOB from HTML format to CSV format
+    df.loc[row, "DOB"] = format_dob_for_csv(
+    df.loc[row, "DOB"]
+)
 
     # Upload New Photo
     if "Photo" in request.files:
@@ -1219,15 +2263,25 @@ def save_ug():
     write_log(f"Updated UG Student | {regno}")
 
     student = df.loc[row].to_dict()
+    
+
+# Convert DOB to HTML date format
+    if student.get("DOB"):
+        try:
+            student["DOB"] = pd.to_datetime(
+                student["DOB"],
+                dayfirst=True
+            ).strftime("%Y-%m-%d")
+        except:
+            student["DOB"] = ""
 
     return render_template(
-        "ug_result.html",
-        student=student,
-        course=course,
-        batch=batch,
-        message="Student details updated successfully"
-    )
-# ==========================================
+    "ug_result.html",
+    student=student,
+    course=course,
+    batch=batch,
+    message="Student details updated successfully")
+#=====================================
 # ACTIVITY LOG
 # ==========================================
 
@@ -1534,6 +2588,7 @@ def student_search():
             return redirect(url_for("admin"))
 
         data = student.iloc[0].to_dict()
+        data["DOB"] = format_dob_for_html(data.get("DOB", ""))
 
         if course == "UG":
             return render_template(
@@ -1566,32 +2621,75 @@ def student_search():
         batch=batch
     )
 # ==========================================
+# STUDENT VALIDATION
+# ==========================================
+
+def validate_student_details(
+    form,
+    dataframe,
+    is_new=False
+):
+
+    """Return a clear validation message for
+    the fields common to all records."""
+
+    regno = form.get(
+        "RegNo",
+        ""
+    ).strip()
+
+    name = form.get(
+        "Name",
+        ""
+    ).strip()
+
+    if not regno:
+
+        return "Register number is required."
+
+    if not name:
+
+        return "Student name is required."
+
+    if (
+        is_new
+        and
+        not dataframe[
+            dataframe["RegNo"].astype(str) == regno
+        ].empty
+    ):
+
+        return (
+            "A student with this register number "
+            "already exists in this batch."
+        )
+
+    email = form.get(
+        "Email",
+        ""
+    ).strip()
+
+    if (
+        email
+        and
+        (
+            "@" not in email
+            or email.startswith("@")
+            or email.endswith("@")
+        )
+    ):
+
+        return "Enter a valid email address."
+
+    return ""
+# ==========================================
 # RUN SERVER
 # ==========================================
 
-if __name__=="__main__":
+if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
         port=5000,
         debug=True
     )
-
-
-def validate_student_details(form, dataframe, is_new=False):
-    """Return a clear validation message for the fields common to all records."""
-    regno = form.get("RegNo", "").strip()
-    name = form.get("Name", "").strip()
-
-    if not regno:
-        return "Register number is required."
-    if not name:
-        return "Student name is required."
-    if is_new and not dataframe[dataframe["RegNo"].astype(str) == regno].empty:
-        return "A student with this register number already exists in this batch."
-
-    email = form.get("Email", "").strip()
-    if email and ("@" not in email or email.startswith("@") or email.endswith("@")):
-        return "Enter a valid email address."
-
-    return ""

@@ -145,6 +145,7 @@ body{
 
 <form action="{{ url_for('save_ug') }}"
 method="POST"
+enctype="multipart/form-data"
 id="studentForm">
 
 
@@ -1197,7 +1198,6 @@ border:1px solid green;
 {% endif %}
 
 </div>
-</form>
 <!-- ================= BUTTONS ================= -->
 
 
@@ -1258,6 +1258,8 @@ onclick="printPage()">
     ← Back Home
 </button>
 </div>
+
+</form>
 
 
 <script>

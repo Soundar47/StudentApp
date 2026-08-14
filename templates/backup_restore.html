@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Backup & Restore</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='admin.css') }}"
+    >
+
+    <style>
+
+        .backup-page {
+            padding: 30px;
+        }
+
+        .backup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .backup-header h1 {
+            margin: 0;
+        }
+
+        .backup-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .backup-card h2 {
+            margin-top: 0;
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .backup-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .backup-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .backup-success {
+            background: #16a34a;
+            color: white;
+        }
+
+        .backup-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .backup-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .backup-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .backup-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .backup-table th,
+        .backup-table td {
+            padding: 13px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .backup-table th {
+            background: #f8fafc;
+        }
+
+        .backup-table form {
+            display: inline;
+        }
+
+        .backup-upload {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .backup-file {
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .backup-warning {
+            background: #fff7ed;
+            border-left: 5px solid #f97316;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .backup-info {
+            background: #eff6ff;
+            border-left: 5px solid #2563eb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 700px) {
+
+            .backup-page {
+                padding: 15px;
+            }
+
+            .backup-card {
+                padding: 18px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="backup-page">
+
+    <div class="backup-header">
+
+        <div>
+
+            <h1>
+                Backup & Restore
+            </h1>
+
+            <p>
+                Protect and restore your student management data.
+            </p>
+
+        </div>
+
+        <a
+            href="{{ url_for('admin') }}"
+            class="backup-btn backup-secondary"
+        >
+            ← Dashboard
+        </a>
+
+    </div>
+
+
+    <!-- FLASH MESSAGES -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% if messages %}
+
+            {% for category, message in messages %}
+
+                <div class="backup-info">
+
+                    {{ message }}
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- CREATE BACKUP -->
+
+    <div class="backup-card">
+
+        <h2>
+            Create Backup
+        </h2>
+
+        <p>
+            Create a complete backup containing student data,
+            photos, uploads, administrator settings and activity logs.
+        </p>
+
+        <form
+            method="POST"
+            action="{{ url_for('create_backup_route') }}"
+        >
+
+            <button
+                type="submit"
+                class="backup-btn backup-primary"
+                onclick="return confirm('Create a complete backup now?')"
+            >
+                Create Backup
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- UPLOAD BACKUP -->
+
+    <div class="backup-card">
+
+        <h2>
+            Upload Backup
+        </h2>
+
+        <p>
+            Upload a previously created StudentApp ZIP backup.
+        </p>
+
+        <form
+            method="POST"
+            action="{{ url_for('upload_backup') }}"
+            enctype="multipart/form-data"
+            class="backup-upload"
+        >
+
+            <input
+                type="file"
+                name="backup_file"
+                accept=".zip"
+                class="backup-file"
+                required
+            >
+
+            <button
+                type="submit"
+                class="backup-btn backup-success"
+            >
+                Upload Backup
+            </button>
+
+        </form>
+
+        <div class="backup-warning">
+
+            <strong>Important:</strong>
+
+            Only upload ZIP files created by this
+            Student Management System.
+
+        </div>
+
+    </div>
+
+
+    <!-- BACKUP HISTORY -->
+
+    <div class="backup-card">
+
+        <h2>
+            Backup History
+        </h2>
+
+        {% if backups %}
+
+        <div class="backup-table-wrapper">
+
+            <table class="backup-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Backup
+                        </th>
+
+                        <th>
+                            Size
+                        </th>
+
+                        <th>
+                            Created
+                        </th>
+
+                        <th>
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for backup in backups %}
+
+                    <tr>
+
+                        <td>
+                            {{ backup.filename }}
+                        </td>
+
+                        <td>
+                            {{ backup.size_mb }} MB
+                        </td>
+
+                        <td>
+                            {{ backup.modified }}
+                        </td>
+
+                        <td>
+
+                            <a
+                                href="{{ url_for(
+                                    'download_backup',
+                                    filename=backup.filename
+                                ) }}"
+                                class="backup-btn backup-primary"
+                            >
+                                Download
+                            </a>
+
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('restore_backup_route') }}"
+                                style="display:inline;"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="filename"
+                                    value="{{ backup.filename }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="backup-btn backup-success"
+                                    onclick="return confirm(
+                                        'WARNING: This will replace the current student data with this backup. A safety backup will be created automatically. Continue?'
+                                    )"
+                                >
+                                    Restore
+                                </button>
+
+                            </form>
+
+
+                            <form
+                                method="POST"
+                                action="{{ url_for('delete_backup') }}"
+                                style="display:inline;"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="filename"
+                                    value="{{ backup.filename }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="backup-btn backup-danger"
+                                    onclick="return confirm(
+                                        'Delete this backup permanently?'
+                                    )"
+                                >
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+            <p>
+                No backups available yet.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- INFORMATION -->
+
+    <div class="backup-card">
+
+        <h2>
+            What is included?
+        </h2>
+
+        <div class="backup-info">
+
+            <strong>Included:</strong>
+
+            <ul>
+
+                <li>UG student CSV files</li>
+
+                <li>PG student CSV files</li>
+
+                <li>Student photographs</li>
+
+                <li>Uploaded files</li>
+
+                <li>Admin account settings</li>
+
+                <li>Activity log</li>
+
+            </ul>
+
+        </div>
+
+
+        <div class="backup-warning">
+
+            <strong>Restore protection:</strong>
+
+            Before restoring a backup, the system automatically
+            creates another backup of the current data.
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

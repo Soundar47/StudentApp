@@ -221,12 +221,12 @@ textarea:not([readonly]){
 
 <tr>
 
-<td width="15%">
+<td width="12%">
 <b>Name</b>
 </td>
 
 
-<td colspan="5">
+<td colspan="1">
 
 <input readonly
 type="text"
@@ -234,55 +234,37 @@ name="Name"
 value="{{student.Name}}">
 
 </td>
-
-
-</tr>
-
-
-
-
-
-<tr>
-
-
 <td>
 <b>Register No</b>
 </td>
-
 
 <td>
 
 <input readonly
 type="text"
 value="{{student.RegNo}}">
-
 </td>
-
-
 
 <td>
 <b>DOB</b>
 </td>
 
-
 <td>
-
 <input readonly
 type="date"
 name="DOB"
 value="{{student.DOB}}">
 
 </td>
+</tr>
 
 
-
+<tr>
 <td>
 <b>Community</b>
 </td>
 
-
 <td>
-
 <input readonly
 type="text"
 name="Community"
@@ -290,24 +272,12 @@ value="{{student.Community}}">
 
 </td>
 
-
-
-</tr>
-
-
-
-
-
-
-<tr>
-
-
 <td>
 <b>Father Name</b>
 </td>
 
 
-<td colspan="2">
+<td colspan="1">
 
 <input readonly
 type="text"
@@ -323,7 +293,7 @@ value="{{student.ParentName}}">
 </td>
 
 
-<td colspan="2">
+<td colspan="1">
 
 <input readonly
 type="text"
@@ -331,25 +301,17 @@ name="MotherName"
 value="{{student.MotherName}}">
 
 </td>
-
-
-
 </tr>
 
 
-
-
-
-
 <tr>
-
 
 <td>
 <b>Father Occupation</b>
 </td>
 
 
-<td colspan="2">
+<td colspan="1">
 
 <input readonly
 type="text"
@@ -358,14 +320,12 @@ value="{{student.faOccupation}}">
 
 </td>
 
-
-
 <td>
 <b>Mother Occupation</b>
 </td>
 
 
-<td colspan="2">
+<td colspan="1">
 
 <input readonly
 type="text"
@@ -374,13 +334,18 @@ value="{{student.moOccupation}}">
 
 </td>
 
+<td>
+<b>First Graduate</b>
+</td>
+
+<td>
+
+<input readonly type="text" name="FirstGraduate" value="{{student.FirstGraduate}}">
+
+</td>
+
 
 </tr>
-
-
-
-
-
 
 <tr>
 
@@ -390,26 +355,15 @@ value="{{student.moOccupation}}">
 </td>
 
 
-<td colspan="5">
+<td colspan="3">
 
 
 <textarea readonly
 name="Address"
-rows="3">{{student.Address}}</textarea>
+rows="2">{{student.Address}}</textarea>
 
 
 </td>
-
-
-
-</tr>
-
-
-
-
-
-
-<tr>
 
 
 <td>
@@ -426,55 +380,13 @@ value="{{student.Pincode}}">
 
 </td>
 
-
-
-<td>
-<b>Mobile</b>
-</td>
-
-
-<td>
-
-<input readonly
-type="text"
-name="Mobile"
-value="{{student.Mobile}}">
-
-</td>
-
-
-
-<td>
-<b>First Graduate</b>
-</td>
-
-
-<td>
-
-<input readonly
-type="text"
-name="FirstGraduate"
-value="{{student.FirstGraduate}}">
-
-</td>
-
-
 </tr>
-
-
-
-
-
-
 <tr>
-
 
 <td>
 <b>Bank Name</b>
 </td>
-
-
-<td colspan="5">
+<td colspan="2">
 
 
 <input readonly
@@ -486,23 +398,11 @@ value="{{student.BankName}}">
 </td>
 
 
-
-</tr>
-
-
-
-
-
-<tr>
-
-
 <td>
 <b>Branch</b>
 </td>
 
-
-<td>
-
+<td colspan="2">
 <input readonly
 type="text"
 name="Branch"
@@ -510,6 +410,10 @@ value="{{student.Branch}}">
 
 </td>
 
+</tr>
+
+
+<tr>
 
 
 <td>
@@ -526,6 +430,20 @@ value="{{student.BankAccount}}">
 
 </td>
 
+
+<td>
+<b>Mobile</b>
+</td>
+
+
+<td>
+
+<input readonly
+type="text"
+name="Mobile"
+value="{{student.Mobile}}">
+
+</td>
 
 
 <td>
@@ -545,11 +463,6 @@ value="{{student.IFSC}}">
 
 
 </tr>
-
-
-
-
-
 
 <tr>
 
@@ -601,12 +514,7 @@ value="{{student.UmisID}}">
 </td>
 
 
-
 </tr>
-
-
-
-
 
 
 <tr>
@@ -617,7 +525,7 @@ value="{{student.UmisID}}">
 </td>
 
 
-<td colspan="5">
+<td colspan="2">
 
 <input readonly
 type="email"
@@ -626,6 +534,19 @@ value="{{student.Email}}">
 
 </td>
 
+<td>
+<b>EMIS ID</b>
+</td>
+
+
+<td colspan="2">
+
+<input readonly
+type="text"
+name="EmisID"
+value="{{student.EmisID}}">
+
+</td>
 
 </tr>
 
@@ -1640,30 +1561,6 @@ value="{{student.Email}}">
     {% endif %}
 
 
-    <!-- ================= DELETE FORM ================= -->
-
-
-        <form action="{{url_for('delete_student')}}"
-        method="POST"
-        class="no-print"
-        onsubmit="return confirm('Delete this student?')">
-
-
-            <input type="hidden"
-            name="course"
-            value="{{course}}">
-
-
-            <input type="hidden"
-            name="batch"
-            value="{{batch}}">
-
-
-            <input type="hidden"
-            name="RegNo"
-            value="{{student.RegNo}}">
-        </form>
-
     </div>
 
     <!-- ================= BUTTONS ================= -->
@@ -1708,6 +1605,9 @@ value="{{student.Email}}">
         </button>
 
         <button
+            type="submit"
+            formaction="{{ url_for('delete_student') }}"
+            onclick="return confirm('Delete this student?')"
             style="background:red;color:white;">
 
             🗑 Delete Student
