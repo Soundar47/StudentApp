@@ -2174,21 +2174,14 @@ def save_pg():
 
     write_log(f"Updated PG Student | {regno}")
 
-    student = df.loc[row].to_dict()
-
-    student = df.loc[row].to_dict()
-
-    student["DOB"] = format_dob_for_html(
-    student.get("DOB", "")
-)
-
-    return render_template(
-    "pg_result.html",
-    student=student,
-    course=course,
-    batch=batch,
-    message="Student details updated successfully"
-)
+    return redirect(url_for(
+        "student_search",
+        course=course,
+        batch=batch,
+        search_type="regno",
+        keyword=regno,
+        message="Student details updated successfully"
+    ))
 # ==========================================
 # SAVE UG STUDENT EDIT
 # ==========================================
@@ -2262,25 +2255,14 @@ def save_ug():
 
     write_log(f"Updated UG Student | {regno}")
 
-    student = df.loc[row].to_dict()
-    
-
-# Convert DOB to HTML date format
-    if student.get("DOB"):
-        try:
-            student["DOB"] = pd.to_datetime(
-                student["DOB"],
-                dayfirst=True
-            ).strftime("%Y-%m-%d")
-        except:
-            student["DOB"] = ""
-
-    return render_template(
-    "ug_result.html",
-    student=student,
-    course=course,
-    batch=batch,
-    message="Student details updated successfully")
+    return redirect(url_for(
+        "student_search",
+        course=course,
+        batch=batch,
+        search_type="regno",
+        keyword=regno,
+        message="Student details updated successfully"
+    ))
 #=====================================
 # ACTIVITY LOG
 # ==========================================
@@ -2595,14 +2577,16 @@ def student_search():
                 "ug_result.html",
                 student=data,
                 course=course,
-                batch=batch
+                batch=batch,
+                message=search_data.get("message")
             )
 
         return render_template(
             "pg_result.html",
             student=data,
             course=course,
-            batch=batch
+            batch=batch,
+            message=search_data.get("message")
         )
 
     # Name Search
