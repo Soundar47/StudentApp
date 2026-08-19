@@ -335,12 +335,11 @@ value="{{student.moOccupation}}">
 </td>
 
 <td>
-<b>First Graduate</b>
+<b>AnualIncome</b>
 </td>
 
 <td>
-
-<input readonly type="text" name="FirstGraduate" value="{{student.FirstGraduate}}">
+<input readonly type="text" name="AnualIncome" value="{{student.AnualIncome}}">
 
 </td>
 
@@ -500,7 +499,7 @@ value="{{student.BloodGroup}}">
 
 
 <td>
-<b>UMIS ID</b>
+<b>First Graduate</b>
 </td>
 
 
@@ -508,8 +507,8 @@ value="{{student.BloodGroup}}">
 
 <input readonly
 type="text"
-name="UmisID"
-value="{{student.UmisID}}">
+name="FirstGraduate"
+value="{{student.FirstGraduate}}">
 
 </td>
 
@@ -549,7 +548,18 @@ value="{{student.EmisID}}">
 </td>
 
 </tr>
+<tr>
+<td>Umis ID</td>
+<td>
 
+<input readonly
+type="text"
+name="UmisID"
+value="{{student.UmisID}}">
+
+</td>
+
+</tr>
 
 
 </table>
@@ -1583,6 +1593,7 @@ value="{{student.EmisID}}">
         <button
         type="submit"
         id="saveBtn"
+        form="studentForm"
         style="display:none;">
 
         💾 Save Changes
@@ -1599,13 +1610,14 @@ value="{{student.EmisID}}">
 
         <button 
             type="button"
-            onclick="history.back()" 
+            onclick="window.location.href='{{ url_for('admin') }}';" 
             class="back-btn">
             ← Back Home
         </button>
 
         <button
             type="submit"
+            form="studentForm"
             formaction="{{ url_for('delete_student') }}"
             onclick="return confirm('Delete this student?')"
             style="background:red;color:white;">
@@ -1615,7 +1627,7 @@ value="{{student.EmisID}}">
             </button>
         </div>
 
-    
+
 
 
     <script>

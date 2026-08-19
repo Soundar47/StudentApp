@@ -194,6 +194,7 @@ COMMON_COLUMNS = [
     "Mobile",
 
     "FirstGraduate",
+    "AnualIncome",
 
     "BankName",
     "Branch",
@@ -208,6 +209,7 @@ COMMON_COLUMNS = [
 
     "UmisID",
     "EmisNo",
+    "EmisID",
 
     "Email",
 
@@ -544,14 +546,18 @@ def load_csv(course,batch):
 
     try:
 
-        return pd.read_csv(
+        df = pd.read_csv(
             path,
-            dtype=str
-        ).fillna("")
+            dtype=str,
+            engine="python",
+            on_bad_lines="skip"
+        )
+
+        return df.fillna("")
 
 
 
-    except:
+    except Exception:
 
         return None
 
