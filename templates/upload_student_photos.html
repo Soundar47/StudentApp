@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Upload Student Photos · SMS</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='admin.css') }}">
+
+    <style>
+
+        .photo-upload-container {
+            max-width: 700px;
+            margin: 30px auto;
+        }
+
+        .photo-upload-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+
+        .photo-upload-card h2 {
+            margin-bottom: 8px;
+        }
+
+        .photo-upload-card p {
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .input-group select,
+        .input-group input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+
+        .photo-info {
+            background: #f5f7fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .photo-info strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 20px;
+            text-decoration: none;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="content-wrap">
+
+    <header class="topbar">
+
+        <div class="topbar-heading">
+
+            <h1>Upload Student Photos</h1>
+
+            <p>
+                Upload multiple student photos using Register Number
+            </p>
+
+        </div>
+
+        <a href="{{ url_for('admin') }}"
+           class="nav-link">
+
+            <button class="home-btn" type="button">
+                <span>←</span>
+                <span>Admin</span>
+            </button>
+
+        </a>
+
+    </header>
+
+
+    <main class="content">
+
+        <!-- Flash Messages -->
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="alert {{ category }}">
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <div class="photo-upload-container">
+
+            <div class="photo-upload-card">
+
+                <h2>📷 Upload Student Photos</h2>
+
+                <p>
+                    Select a course, batch and multiple student photos.
+                </p>
+
+
+                <form action="{{ url_for('upload_student_photos') }}"
+                      method="POST"
+                      enctype="multipart/form-data">
+
+
+                    <!-- COURSE -->
+
+                    <div class="input-group">
+
+                        <label for="course">
+                            Course
+                        </label>
+
+                        <select name="course"
+                                id="course"
+                                required>
+
+                            <option value="">
+                                Select Course
+                            </option>
+
+                            <option value="UG">
+                                UG
+                            </option>
+
+                            <option value="PG">
+                                PG
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- BATCH -->
+
+                    <div class="input-group">
+
+                        <label for="batch">
+                            Batch
+                        </label>
+
+                        <input type="text"
+                               name="batch"
+                               id="batch"
+                               placeholder="Example: 2025_2028"
+                               required>
+
+                    </div>
+
+
+                    <!-- PHOTOS -->
+
+                    <div class="input-group">
+
+                        <label for="photos">
+                            Student Photos
+                        </label>
+
+                        <input type="file"
+                               name="photos"
+                               id="photos"
+                               accept=".jpg,.jpeg,.png"
+                               multiple
+                               required>
+
+                    </div>
+
+
+                    <!-- INFORMATION -->
+
+                    <div class="photo-info">
+
+                        <strong>📌 Important</strong>
+
+                        <div>
+                            Photo filename must be the student's
+                            Register Number.
+                        </div>
+
+                        <br>
+
+                        <div>
+                            Example:
+                        </div>
+
+                        <div>
+                            <strong>26PCS001.jpg</strong>
+                        </div>
+
+                        <div>
+                            <strong>26PCS002.jpg</strong>
+                        </div>
+
+                        <div>
+                            <strong>26PCS003.png</strong>
+                        </div>
+
+                    </div>
+
+
+                    <button type="submit"
+                            class="primary-btn">
+
+                        📷 Upload Photos
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

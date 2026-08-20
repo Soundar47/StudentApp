@@ -60,7 +60,11 @@
                 <i class="icon" aria-hidden="true">⇧</i>
                 <span>Upload Data</span>
             </button>
-
+            <button class="nav-btn" onclick="showPage('upload_photos', this)">
+                <i class="icon" aria-hidden="true">▣</i>
+                <span>Upload Student Photos</span>
+            </button>
+            
             <button class="nav-btn" onclick="showPage('add_student', this)">
                 <i class="icon" aria-hidden="true">＋</i>
                 <span>Add Student</span>
@@ -89,6 +93,7 @@
                     <span>Student Management</span>
                 </button>
             </a>
+            
             <a href="{{ url_for('backup_restore') }}">
                 <button class="nav-btn" type="button">
                     <span>💾</span>
@@ -332,7 +337,131 @@
                 </form>
 
             </section>
+            <!-- ==========================================
+            UPLOAD STUDENT PHOTOS
+========================================== -->
 
+<section id="upload_photos" class="page">
+
+    <div class="page-heading">
+
+        <h2>Upload Student Photos</h2>
+
+        <p>
+            Upload multiple student photos and automatically
+            match them using Register Number
+        </p>
+
+    </div>
+
+
+    <form
+        action="{{ url_for('upload_student_photos') }}"
+        method="POST"
+        enctype="multipart/form-data"
+        class="form-box"
+    >
+
+        <!-- COURSE -->
+
+        <div class="input-group">
+
+            <label>Course</label>
+
+            <select name="course" required>
+
+                <option value="">
+                    Select Course
+                </option>
+
+                <option value="UG">
+                    UG
+                </option>
+
+                <option value="PG">
+                    PG
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- BATCH -->
+
+        <div class="input-group">
+
+            <label>Batch</label>
+
+            <input
+                type="text"
+                name="batch"
+                placeholder="Example : 2027_2030"
+                required
+            >
+
+        </div>
+
+
+        <!-- PHOTO -->
+
+        <div class="upload-box">
+
+            <h3>Select Student Photos</h3>
+
+            <p>
+                Photo filename must be the Register Number
+            </p>
+
+            <p>
+                Example:
+                <strong>1001.jpg</strong>,
+                <strong>1002.jpg</strong>,
+                <strong>1003.jpg</strong>
+            </p>
+
+            <input
+                type="file"
+                name="photos"
+                accept=".jpg,.jpeg,.png"
+                multiple
+                required
+            >
+
+        </div>
+
+
+        <!-- INFORMATION -->
+
+        <div class="info">
+
+            <strong>Photo Naming Rule</strong>
+
+            <p>
+                Student RegNo = 1001
+                → Photo must be
+                <strong>1001.jpg</strong>
+            </p>
+
+            <p>
+                You can select multiple photos at the same time.
+            </p>
+
+        </div>
+
+
+        <!-- BUTTON -->
+
+                <button
+            type="submit"
+            class="primary-btn"
+        >
+                Upload Student Photos
+                </button>
+
+                </form>
+
+            </section>
             <!-- ==========================================
                         ADD STUDENT
             =========================================== -->

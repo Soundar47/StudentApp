@@ -1940,7 +1940,269 @@ def upload_data():
     return redirect(
         url_for("admin")
     )
+# ==========================================
+# BULK STUDENT PHOTO UPLOAD
+# ==========================================
 
+@app.route(
+    "/upload-student-photos",
+    methods=["GET", "POST"]
+)
+@login_required
+def upload_student_photos():
+
+    if request.method == "GET":
+
+        return render_template(
+            "upload_student_photos.html"
+        )
+
+    # --------------------------------------
+    # GET COURSE AND BATCH
+    # --------------------------------------
+
+    course = request.form.get(
+        "course",
+        ""
+    ).upper().strip()
+
+    batch = request.form.get(
+        "batch",
+        ""
+    ).strip().replace("-", "_")
+
+    if course not in ["UG", "PG"]:
+
+        flash(
+            "Please select UG or PG.",
+            "error"
+        )
+
+        return redirect(
+            url_for("upload_student_photos")
+        )
+
+    if not batch:
+
+        flash(
+            "Please enter/select a batch.",
+            "error"
+        )
+
+        return redirect(
+            url_for("upload_student_photos")
+        )
+
+    # --------------------------------------
+    # LOAD CSV
+    # --------------------------------------
+
+    df = load_csv(
+        course,
+        batch
+    )
+
+    if df is None:
+
+        flash(
+            f"{course} {batch} CSV file not found.",
+            "error"
+        )
+
+        return redirect(
+            url_for("upload_student_photos")
+        )
+
+    # --------------------------------------
+    # GET MULTIPLE PHOTOS
+    # --------------------------------------
+
+    photos = request.files.getlist(
+        "photos"
+    )
+
+    if not photos:
+
+        flash(
+            "Please select student photos.",
+            "error"
+        )
+
+        return redirect(
+            url_for("upload_student_photos")
+        )
+
+    uploaded = 0
+    failed = []
+
+    # --------------------------------------
+    # PROCESS EACH PHOTO
+    # --------------------------------------
+
+    for photo in photos:
+
+        if not photo or not photo.filename:
+            continue
+
+        original_filename = secure_filename(
+            photo.filename
+        )
+
+        # Check extension
+        if not allowed_photo(
+            original_filename
+        ):
+
+            failed.append(
+                f"{original_filename} - Invalid image format"
+            )
+
+            continue
+
+        # ----------------------------------
+        # GET REGISTER NUMBER FROM FILENAME
+        # ----------------------------------
+
+        regno = os.path.splitext(
+            original_filename
+        )[0].strip()
+
+        if not regno:
+
+            failed.append(
+                f"{original_filename} - Register number missing"
+            )
+
+            continue
+
+        # ----------------------------------
+        # FIND STUDENT
+        # ----------------------------------
+
+        student_index = df[
+            df["RegNo"].astype(str).str.strip()
+            == regno
+        ].index
+
+        if len(student_index) == 0:
+
+            failed.append(
+                f"{original_filename} - Student {regno} not found"
+            )
+
+            continue
+
+        row = student_index[0]
+
+        # ----------------------------------
+        # DELETE OLD PHOTO IF EXISTS
+        # ----------------------------------
+
+        old_photo = str(
+            df.loc[row, "Photo"]
+        ).strip()
+
+        if old_photo:
+
+            old_photo_path = os.path.join(
+                PHOTO_FOLDER,
+                old_photo
+            )
+
+            if os.path.exists(
+                old_photo_path
+            ):
+
+                try:
+
+                    os.remove(
+                        old_photo_path
+                    )
+
+                except OSError:
+                    pass
+
+        # ----------------------------------
+        # SAVE PHOTO
+        # ----------------------------------
+
+        ext = os.path.splitext(
+            original_filename
+        )[1].lower()
+
+        filename = (
+            secure_filename(regno)
+            + ext
+        )
+
+        photo_path = os.path.join(
+            PHOTO_FOLDER,
+            filename
+        )
+
+        photo.save(
+            photo_path
+        )
+
+        # ----------------------------------
+        # UPDATE CSV PHOTO COLUMN
+        # ----------------------------------
+
+        df.loc[row, "Photo"] = filename
+
+        uploaded += 1
+
+    # --------------------------------------
+    # SAVE CSV
+    # --------------------------------------
+
+    save_csv(
+        df,
+        course,
+        batch
+    )
+
+    # --------------------------------------
+    # LOG
+    # --------------------------------------
+
+    write_log(
+        f"Bulk Photo Upload | "
+        f"{course} {batch} | "
+        f"Uploaded: {uploaded} | "
+        f"Failed: {len(failed)}"
+    )
+
+    # --------------------------------------
+    # RESULT
+    # --------------------------------------
+
+    if uploaded > 0:
+
+        flash(
+            f"{uploaded} student photo(s) uploaded successfully.",
+            "success"
+        )
+
+    if failed:
+
+        flash(
+            f"{len(failed)} photo(s) could not be matched.",
+            "error"
+        )
+
+        for error in failed:
+
+            flash(
+                error,
+                "error"
+            )
+
+    return redirect(
+        url_for(
+            "upload_student_photos"
+        )
+    )
 # ==========================================
 # ADD STUDENT PAGE
 # ==========================================
