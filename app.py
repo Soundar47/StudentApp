@@ -13,6 +13,7 @@ from datetime import datetime
 
 import os
 import json
+import re
 import shutil
 import tempfile
 import zipfile
@@ -356,6 +357,18 @@ PG_COLUMNS = COMMON_COLUMNS + [
 ]
 
 
+GOOGLE_FORM_FIELDS = [
+    "RegNo", "Name", "Course", "Batch", "DOB", "Community",
+    "ParentName", "MotherName", "faOccupation", "moOccupation",
+    "AnualIncome", "Address", "Pincode", "Mobile", "FirstGraduate",
+    "BankName", "Branch", "BankAccount", "IFSC", "MICR", "Aadhar",
+    "BloodGroup", "UmisID", "EmisNo", "Email", "Photo"
+]
+
+GOOGLE_FORM_REQUIRED_FIELDS = {"RegNo", "Name", "Course", "Batch"}
+ALLOWED_BLOOD_GROUPS = {"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"}
+
+
 # ==========================================
 # LOGIN REQUIRED DECORATOR
 # ==========================================
@@ -584,6 +597,195 @@ def save_csv(df,course,batch):
         index=False,
         encoding="utf-8-sig"
     )
+
+
+# ==========================================
+# GOOGLE FORM IMPORT
+# ==========================================
+
+def google_services():
+    """Create scoped Google API clients without exposing credentials."""
+
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+
+    credentials_file = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
+    if not credentials_file or not sheet_id:
+        raise RuntimeError(
+            "Google import is not configured. Set GOOGLE_SERVICE_ACCOUNT_FILE "
+            "and GOOGLE_SHEET_ID."
+        )
+
+    credentials = service_account.Credentials.from_service_account_file(
+        credentials_file,
+        scopes=[
+            "https://www.googleapis.com/auth/spreadsheets.readonly",
+            "https://www.googleapis.com/auth/drive.readonly"
+        ]
+    )
+    return (
+        build("sheets", "v4", credentials=credentials, cache_discovery=False),
+        build("drive", "v3", credentials=credentials, cache_discovery=False),
+        sheet_id
+    )
+
+
+def validate_google_form_row(row):
+    """Return an error string, or an empty string for a valid response."""
+
+    for field in GOOGLE_FORM_REQUIRED_FIELDS:
+        if not str(row.get(field, "")).strip():
+            return f"{field} is required"
+
+    regno = str(row["RegNo"]).strip()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", regno):
+        return "Invalid register number"
+
+    course = str(row["Course"]).strip().upper()
+    if course not in {"UG", "PG"}:
+        return "Course must be UG or PG"
+
+    for field, pattern in {
+        "Mobile": r"\d{7,15}", "Pincode": r"\d{4,10}",
+        "Aadhar": r"\d{12}", "BankAccount": r"\d{6,24}",
+        "IFSC": r"[A-Za-z]{4}0[A-Za-z0-9]{6}"
+    }.items():
+        value = str(row.get(field, "")).strip()
+        if value and not re.fullmatch(pattern, value):
+            return f"Invalid {field}"
+
+    email = str(row.get("Email", "")).strip()
+    if email and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
+        return "Invalid Email"
+    if row.get("FirstGraduate") and row["FirstGraduate"] not in {"Yes", "No"}:
+        return "FirstGraduate must be Yes or No"
+    if row.get("BloodGroup") and row["BloodGroup"] not in ALLOWED_BLOOD_GROUPS:
+        return "Invalid BloodGroup"
+    return ""
+
+
+def google_drive_file_id(value):
+    """Extract a Drive ID from common Forms response formats."""
+
+    match = re.search(r"[-\w]{20,}", str(value or "").strip())
+    return match.group(0) if match else ""
+
+
+def download_google_photo(drive_service, photo_value, regno):
+    """Download one Drive image into the existing local photo folder."""
+
+    from googleapiclient.http import MediaIoBaseDownload
+
+    file_id = google_drive_file_id(photo_value)
+    if not file_id:
+        raise ValueError("Photo reference does not contain a Drive file ID")
+    metadata = drive_service.files().get(
+        fileId=file_id, fields="name,mimeType", supportsAllDrives=True
+    ).execute()
+    extension = os.path.splitext(secure_filename(metadata.get("name", "")))[1].lower()
+    if metadata.get("mimeType") not in {"image/jpeg", "image/png"} \
+            or extension not in {".jpg", ".jpeg", ".png"}:
+        raise ValueError("Photo is not a JPG, JPEG, or PNG image")
+
+    destination = os.path.join(PHOTO_FOLDER, secure_filename(regno) + extension)
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temporary:
+            temporary_path = temporary.name
+            downloader = MediaIoBaseDownload(
+                temporary,
+                drive_service.files().get_media(fileId=file_id, supportsAllDrives=True)
+            )
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+        os.replace(temporary_path, destination)
+        return os.path.basename(destination)
+    finally:
+        if temporary_path and os.path.exists(temporary_path):
+            os.remove(temporary_path)
+
+
+def import_google_form_responses():
+    """Merge responses without replacing existing CSV rows."""
+
+    sheets_service, drive_service, sheet_id = google_services()
+    response_range = os.environ.get("GOOGLE_SHEET_RANGE", "Form Responses 1")
+    values = sheets_service.spreadsheets().values().get(
+        spreadsheetId=sheet_id, range=response_range
+    ).execute().get("values", [])
+    result = {"new": 0, "updated": 0, "photos": 0, "skipped": 0,
+              "failed": 0, "errors": []}
+    if not values:
+        return result
+
+    headers = [str(header).strip() for header in values[0]]
+    for values_row in values[1:]:
+        row = dict(zip(headers, values_row))
+        row = {field: str(row.get(field, "")).strip() for field in GOOGLE_FORM_FIELDS}
+        validation_error = validate_google_form_row(row)
+        regno = row.get("RegNo", "") or "(blank)"
+        if validation_error:
+            result["skipped"] += 1
+            result["errors"].append({"regno": regno, "reason": validation_error})
+            write_log(f"Skipped Google Form record | {regno} | {validation_error}")
+            continue
+
+        course = row["Course"].upper()
+        batch = row["Batch"].replace("-", "_")
+        dataframe = load_csv(course, batch)
+        if dataframe is None:
+            create_empty_batch(course, batch)
+            dataframe = load_csv(course, batch)
+        if dataframe is None or "RegNo" not in dataframe.columns:
+            result["failed"] += 1
+            result["errors"].append({
+                "regno": regno,
+                "reason": "Target batch CSV could not be loaded"
+            })
+            write_log(f"Failed Google Form record | {regno} | Target batch CSV unavailable")
+            continue
+
+        matches = dataframe[dataframe["RegNo"].astype(str).str.strip() == regno].index
+        is_new = len(matches) == 0
+        if is_new:
+            row_index = max(dataframe.index, default=-1) + 1
+            dataframe.loc[row_index] = {column: "" for column in dataframe.columns}
+        else:
+            row_index = matches[0]
+
+        for field in GOOGLE_FORM_FIELDS:
+            if field != "Photo" and field in dataframe.columns:
+                value = row[field]
+                dataframe.loc[row_index, field] = format_dob_for_csv(value) if field == "DOB" else value
+
+        if row.get("Photo"):
+            try:
+                photo_filename = download_google_photo(drive_service, row["Photo"], regno)
+                old_photo = str(dataframe.loc[row_index, "Photo"]).strip() if "Photo" in dataframe.columns else ""
+                if "Photo" in dataframe.columns:
+                    dataframe.loc[row_index, "Photo"] = photo_filename
+                if old_photo and old_photo != photo_filename:
+                    old_path = os.path.join(PHOTO_FOLDER, secure_filename(old_photo))
+                    if os.path.isfile(old_path):
+                        os.remove(old_path)
+                result["photos"] += 1
+                write_log(f"Photo downloaded | {regno}")
+            except Exception:
+                result["failed"] += 1
+                result["errors"].append({"regno": regno, "reason": "Photo download failed"})
+                write_log(f"Failed Google Form record | {regno} | Photo download failed")
+
+        save_csv(dataframe, course, batch)
+        if is_new:
+            result["new"] += 1
+            write_log(f"New student from Google Form | {regno}")
+        else:
+            result["updated"] += 1
+            write_log(f"Existing student updated from Google Form | {regno}")
+
+    return result
 # ==========================================
 # BACKUP & RESTORE SYSTEM
 # ==========================================
@@ -1419,9 +1621,38 @@ def admin():
 
         last_login=last_login,
 
-        recent_logs=recent_logs
+        recent_logs=recent_logs,
+
+        import_result=session.pop("import_result", None)
 
     )
+
+
+@app.route("/import-google-responses", methods=["POST"])
+@login_required
+def import_google_responses_route():
+
+    write_log("Google Form import started")
+    try:
+        result = import_google_form_responses()
+        session["import_result"] = result
+        write_log(
+            "Google Form import completed | "
+            f"New: {result['new']} | Updated: {result['updated']} | "
+            f"Photos: {result['photos']} | Skipped: {result['skipped']} | "
+            f"Failed: {result['failed']}"
+        )
+    except Exception as error:
+        session["import_result"] = {
+            "new": 0, "updated": 0, "photos": 0, "skipped": 0,
+            "failed": 1, "errors": [{
+                "regno": "-",
+                "reason": "Google API connection failed. Check server configuration and permissions."
+            }]
+        }
+        write_log("Google Form import failed | Google API error")
+
+    return redirect(url_for("admin"))
 # ==========================================
 # BACKUP & RESTORE PAGE
 # ==========================================

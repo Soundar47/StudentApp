@@ -64,6 +64,13 @@
                 <i class="icon" aria-hidden="true">▣</i>
                 <span>Upload Student Photos</span>
             </button>
+
+            <form action="{{ url_for('import_google_responses_route') }}" method="POST">
+                <button class="nav-btn" type="submit">
+                    <i class="icon" aria-hidden="true">↓</i>
+                    <span>Import Google Form Responses</span>
+                </button>
+            </form>
             
             <button class="nav-btn" onclick="showPage('add_student', this)">
                 <i class="icon" aria-hidden="true">＋</i>
@@ -291,6 +298,25 @@
                 </div>
 
             </section>
+
+            {% if import_result %}
+            <section class="dashboard-box" aria-live="polite">
+                <h3>Import Completed</h3>
+                <p><strong>New Students</strong><span>{{ import_result.new }}</span></p>
+                <p><strong>Updated Students</strong><span>{{ import_result.updated }}</span></p>
+                <p><strong>Photos Downloaded</strong><span>{{ import_result.photos }}</span></p>
+                <p><strong>Skipped</strong><span>{{ import_result.skipped }}</span></p>
+                <p><strong>Failed</strong><span>{{ import_result.failed }}</span></p>
+                {% if import_result.errors %}
+                    <h4>Errors</h4>
+                    <ul class="activity-list">
+                    {% for item in import_result.errors %}
+                        <li>{{ item.regno }}: {{ item.reason }}</li>
+                    {% endfor %}
+                    </ul>
+                {% endif %}
+            </section>
+            {% endif %}
 
             <!-- ==========================================
                         UPLOAD DATA
