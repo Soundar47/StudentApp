@@ -1,13 +1,11 @@
 .venv/
+venv/
 __pycache__/
-*.py[cod]
+*.pyc
 .env
-.env.*
-!.env.example
 secrets/
 *.json
-!admin.json
-backups/
 activity.log
-uploads/
+data/
+backups/
 static/photos/

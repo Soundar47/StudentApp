@@ -823,3 +823,22 @@ button{
     transition: none !important;
   }
 }
+
+.info-table th{
+  padding: 9px 8px;
+  font-size: 11px;
+  color: var(--text-400);
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.info-table th:first-child,
+.info-table td:first-child{
+  text-align: left;
+}
+
+.info-table td{
+  padding-left: 8px;
+  padding-right: 8px;
+}

@@ -100,6 +100,16 @@ textarea:not([readonly]){
 
 }
 
+.photo-unavailable{
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-size:12px;
+
+}
+
 
 .title{
 
@@ -213,12 +223,15 @@ PG & Research Department of Computer Science
 
 <div class="photo-box">
 
-{% if student.Photo %}
+{% set local_photo = photo_static_path(course, batch, student.Photo) %}
+{% if local_photo %}
     <img class="photo"
-         src="{{ url_for('static', filename='photos/' + student.Photo) }}">
+         src="{{ url_for('static', filename=local_photo) }}"
+         alt="Student Photo">
 {% else %}
-    <img class="photo"
-         src="{{ url_for('static', filename='photos/default.png') }}">
+    <div class="photo photo-unavailable" role="img" aria-label="Photo not available">
+        Photo Not Available
+    </div>
 {% endif %}
 
 <input type="file"

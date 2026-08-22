@@ -14,6 +14,7 @@ from datetime import datetime
 import os
 import json
 import re
+import hashlib
 import shutil
 import tempfile
 import zipfile
@@ -30,6 +31,19 @@ from functools import wraps
 app = Flask(__name__)
 
 app.secret_key = "student_management_system_2026"
+
+# Always resolve local configuration relative to this file, not the directory
+# from which Flask/VS Code happened to start the process.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Loading this file is optional: production deployments can continue to provide
+# the same values as real environment variables. It makes the documented
+# project-local .env configuration work when the app is started directly.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
+except ImportError:
+    pass
 
 
 
@@ -130,11 +144,14 @@ def format_dob_for_csv(dob):
 
     try:
         dob = str(dob).strip()
-
-        return pd.to_datetime(
-            dob,
-            format="%Y-%m-%d"
-        ).strftime("%d-%m-%Y")
+        try:
+            parsed_dob = pd.to_datetime(dob, format="%Y-%m-%d")
+        except (ValueError, TypeError):
+            # Google Sheets may return its locale-formatted date rather than the
+            # ISO value used by the HTML form.  Keep the application's existing
+            # day-first interpretation for those values.
+            parsed_dob = pd.to_datetime(dob, dayfirst=True)
+        return parsed_dob.strftime("%d-%m-%Y")
 
     except (ValueError, TypeError):
         return ""
@@ -145,6 +162,42 @@ def format_dob_for_csv(dob):
 ADMIN_FILE = "admin.json"
 
 LOG_FILE = "activity.log"
+
+# This is deliberately separate from the student CSVs. It is an audit ledger of
+# successfully seen Form response rows; RegNo remains the duplicate protection
+# because repeated imports intentionally update an existing student.
+GOOGLE_IMPORT_LOG_FILE = "google_import_log.json"
+
+# ID of the existing Form response spreadsheet. An explicit environment value
+# still takes precedence so deployments can override it.
+DEFAULT_GOOGLE_SHEET_ID = "153RHUhM2Kms340iFLhQrY-KkC7mMmuecTUFNvyqe-Y8"
+
+# Each key is the application/CSV column and each value lists acceptable Google
+# Form or Sheet header names. Add an alias here if a Form question is renamed;
+# the CSV and import logic do not need to change.
+GOOGLE_FORM_FIELD_MAPPING = {
+    "RegNo": ("RegNo", "Register Number", "Registration Number"),
+    "Name": ("Name", "Student Name"),
+    "Course": ("Course", "Programme", "Program"),
+    "Batch": ("Batch", "Academic Batch"),
+    "DOB": ("DOB", "Date of Birth"),
+    "Community": ("Community",),
+    "ParentName": ("ParentName", "Father Name", "Parent Name"),
+    "MotherName": ("MotherName", "Mother Name"),
+    "faOccupation": ("faOccupation", "Father Occupation"),
+    "moOccupation": ("moOccupation", "Mother Occupation"),
+    "AnualIncome": ("AnualIncome", "Annual Income"),
+    "Address": ("Address",), "Pincode": ("Pincode", "PIN Code"),
+    "Mobile": ("Mobile", "Mobile Number", "Phone Number"),
+    "FirstGraduate": ("FirstGraduate", "First Graduate"),
+    "BankName": ("BankName", "Bank Name"), "Branch": ("Branch",),
+    "BankAccount": ("BankAccount", "Bank Account", "Account Number"),
+    "IFSC": ("IFSC", "IFSC Code"), "MICR": ("MICR", "MICR Code"),
+    "Aadhar": ("Aadhar", "Aadhaar", "Aadhaar Number"),
+    "BloodGroup": ("BloodGroup", "Blood Group"),
+    "UmisID": ("UmisID", "UMIS ID"), "EmisNo": ("EmisNo", "EMIS No"),
+    "Email": ("Email", "Email Address"), "Photo": ("Photo", "Student Photo")
+}
 
 # ==========================================
 # PHOTO SETTINGS
@@ -509,11 +562,8 @@ def write_log(message):
 
 def get_csv_path(course,batch):
 
-
-    batch = batch.replace(
-        "-",
-        "_"
-    )
+    course = str(course).strip().upper()
+    batch = str(batch).strip().replace("-", "_")
 
 
 
@@ -525,12 +575,14 @@ def get_csv_path(course,batch):
         )
 
 
-    else:
+    if course == "PG":
 
         return os.path.join(
             PG_FOLDER,
             batch+".csv"
         )
+
+    raise ValueError("Course must be UG or PG")
 
 
 
@@ -592,38 +644,152 @@ def save_csv(df,course,batch):
     )
 
 
-    df.to_csv(
-        path,
-        index=False,
-        encoding="utf-8-sig"
-    )
+    temporary_path = path + ".tmp"
+    try:
+        df.to_csv(
+            temporary_path,
+            index=False,
+            encoding="utf-8-sig"
+        )
+        os.replace(temporary_path, path)
+    finally:
+        if os.path.exists(temporary_path):
+            os.remove(temporary_path)
 
 
 # ==========================================
 # GOOGLE FORM IMPORT
 # ==========================================
 
+class GoogleImportConfigurationError(RuntimeError):
+    """A safe, admin-displayable Google import configuration error."""
+
+
+def google_credentials_path():
+    """Return an absolute service-account path without exposing its contents."""
+
+    configured_path = (
+        os.environ.get("GOOGLE_CREDENTIALS_FILE")
+        or os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
+        or os.path.join("secrets", "google-service-account.json")
+    )
+    if not os.path.isabs(configured_path):
+        configured_path = os.path.join(BASE_DIR, configured_path)
+    return os.path.abspath(configured_path)
+
+
+def google_response_range(sheets_service, sheet_id):
+    """Use a configured range or find the worksheet with Form response headers."""
+
+    configured_range = os.environ.get("GOOGLE_SHEET_RANGE", "").strip()
+    if configured_range:
+        return configured_range
+
+    spreadsheet = sheets_service.spreadsheets().get(
+        spreadsheetId=sheet_id,
+        fields="sheets.properties(title,hidden)"
+    ).execute()
+    sheets = spreadsheet.get("sheets", [])
+    visible_titles = [
+        item.get("properties", {}).get("title", "")
+        for item in sheets
+        if not item.get("properties", {}).get("hidden", False)
+    ]
+    if not visible_titles:
+        raise GoogleImportConfigurationError("No accessible worksheet was found.")
+    # A title such as "Form Responses 1" is a useful preference, but it is not
+    # enough by itself: admins can rename tabs or add unrelated worksheets.
+    # Require the fields that identify this application's Form response sheet.
+    ordered_titles = sorted(
+        visible_titles,
+        key=lambda title: not title.casefold().startswith("form responses")
+    )
+    required_fields = {"RegNo", "Name", "Course", "Batch"}
+    for title in ordered_titles:
+        quoted_title = "'" + title.replace("'", "''") + "'"
+        header_row = sheets_service.spreadsheets().values().get(
+            spreadsheetId=sheet_id, range=f"{quoted_title}!1:1"
+        ).execute().get("values", [])
+        headers = [str(value).strip() for value in (header_row[0] if header_row else [])]
+        matched_fields = {
+            field for field, aliases in GOOGLE_FORM_FIELD_MAPPING.items()
+            if any(alias.casefold() in {header.casefold() for header in headers}
+                   for alias in aliases)
+        }
+        has_timestamp = any(header.casefold() == "timestamp" for header in headers)
+        if has_timestamp and required_fields.issubset(matched_fields):
+            return quoted_title
+
+    raise GoogleImportConfigurationError("Google Form response sheet not found.")
+
+
+def google_safe_error_reason(error):
+    """Convert Google/credential exceptions to an admin-safe diagnostic."""
+
+    if isinstance(error, GoogleImportConfigurationError):
+        return str(error)
+    if isinstance(error, FileNotFoundError):
+        return "Service account credentials not found."
+    if isinstance(error, PermissionError):
+        return "Service account credentials could not be read."
+    if isinstance(error, (TimeoutError, ConnectionError, OSError)):
+        return "Network connection to Google API failed. Check internet access and try again."
+
+    status = getattr(getattr(error, "resp", None), "status", None)
+    error_text = str(error).lower()
+    if status == 404:
+        # Google can return 404 for inaccessible private files, so it is not
+        # safe to claim which of these two causes occurred. The full exception
+        # remains in the Flask server log.
+        return "Spreadsheet not found, or the service account does not have permission to access it."
+    if status == 403:
+        if "accessnotconfigured" in error_text or "has not been used" in error_text:
+            return "Google Sheets or Google Drive API is not enabled for the service-account project."
+        return "Service account does not have permission to access the spreadsheet or uploaded photos."
+    if status == 401:
+        return "Google service account credentials are invalid or disabled."
+    if "malformed" in error_text or "service account" in error_text or "private key" in error_text:
+        return "Service account credentials are invalid."
+    if "timeout" in error_text or "timed out" in error_text or "connection" in error_text:
+        return "Network connection to Google API failed. Check internet access and try again."
+    return "Google API connection failed. See the server log for the underlying error."
+
+def get_google_credentials():
+    """Load service-account credentials from the configured private JSON file."""
+
+    from google.oauth2 import service_account
+
+    credentials_file = google_credentials_path()
+    if not os.path.isfile(credentials_file):
+        raise GoogleImportConfigurationError("Service account credentials not found.")
+
+    try:
+        credentials = service_account.Credentials.from_service_account_file(
+            credentials_file,
+            scopes=[
+                "https://www.googleapis.com/auth/spreadsheets.readonly",
+                "https://www.googleapis.com/auth/drive.readonly"
+            ]
+        )
+    except (OSError, ValueError) as error:
+        raise GoogleImportConfigurationError("Service account credentials are invalid.") from error
+
+    return credentials
+
+
 def google_services():
     """Create scoped Google API clients without exposing credentials."""
 
-    from google.oauth2 import service_account
     from googleapiclient.discovery import build
 
-    credentials_file = os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
-    sheet_id = os.environ.get("GOOGLE_SHEET_ID")
-    if not credentials_file or not sheet_id:
-        raise RuntimeError(
-            "Google import is not configured. Set GOOGLE_SERVICE_ACCOUNT_FILE "
-            "and GOOGLE_SHEET_ID."
-        )
+    credentials = get_google_credentials()
+    sheet_id = os.environ.get("GOOGLE_SHEET_ID", DEFAULT_GOOGLE_SHEET_ID).strip()
+    if not sheet_id:
+        raise GoogleImportConfigurationError("Google Sheet ID is not configured.")
 
-    credentials = service_account.Credentials.from_service_account_file(
-        credentials_file,
-        scopes=[
-            "https://www.googleapis.com/auth/spreadsheets.readonly",
-            "https://www.googleapis.com/auth/drive.readonly"
-        ]
-    )
+    # This email is safe to record and tells the administrator exactly which
+    # account must be granted Viewer access to the Sheet and upload folder.
+    app.logger.info("Google import using service account: %s", credentials.service_account_email)
     return (
         build("sheets", "v4", credentials=credentials, cache_discovery=False),
         build("drive", "v3", credentials=credentials, cache_discovery=False),
@@ -631,12 +797,86 @@ def google_services():
     )
 
 
+def get_google_sheet():
+    """Return the configured Sheets client and spreadsheet ID for admin tasks."""
+
+    sheets_service, _drive_service, sheet_id = google_services()
+    return sheets_service, sheet_id
+
+
+def get_google_form_responses():
+    """Read the detected Form response tab using the existing API clients."""
+
+    sheets_service, drive_service, sheet_id = google_services()
+    response_range = google_response_range(sheets_service, sheet_id)
+    values = sheets_service.spreadsheets().values().get(
+        spreadsheetId=sheet_id, range=response_range
+    ).execute().get("values", [])
+    return values, response_range, drive_service, sheet_id
+
+
+def normalize_batch(batch):
+    """Use the application's underscore batch convention for paths."""
+
+    return str(batch or "").strip().replace("-", "_")
+
+
+def get_photo_folder(course, batch):
+    """Return the existing static photo directory for one exact course/batch."""
+
+    course = str(course or "").strip().upper()
+    if course not in {"UG", "PG"}:
+        raise ValueError("Course must be UG or PG")
+    batch = normalize_batch(batch)
+    if not re.fullmatch(r"\d{4}_\d{4}", batch):
+        raise ValueError("Invalid batch")
+    return os.path.join(PHOTO_FOLDER, course.lower(), batch)
+
+
+def get_photo_path(course, batch, filename):
+    """Safely construct a course/batch photo path without storing it in CSV."""
+
+    filename = secure_filename(str(filename or ""))
+    if not filename or filename != os.path.basename(filename):
+        raise ValueError("Invalid photo filename")
+    return os.path.join(get_photo_folder(course, batch), filename)
+
+
+def get_existing_photo_path(course, batch, filename):
+    """Use nested storage, with a read/delete fallback for older flat photos."""
+
+    nested_path = get_photo_path(course, batch, filename)
+    if os.path.isfile(nested_path):
+        return nested_path
+    return os.path.join(PHOTO_FOLDER, secure_filename(str(filename or "")))
+
+
+def get_photo_static_path(course, batch, filename):
+    """Return an existing static-relative path, or an empty value for no image."""
+
+    filename = secure_filename(str(filename or ""))
+    if not filename:
+        return ""
+    nested_path = get_photo_path(course, batch, filename)
+    if os.path.isfile(nested_path):
+        return f"photos/{str(course).lower()}/{normalize_batch(batch)}/{filename}"
+    legacy_path = os.path.join(PHOTO_FOLDER, filename)
+    if os.path.isfile(legacy_path):
+        return f"photos/{filename}"
+    return ""
+
+
+@app.context_processor
+def inject_photo_helpers():
+    return {"photo_static_path": get_photo_static_path}
+
+
 def validate_google_form_row(row):
     """Return an error string, or an empty string for a valid response."""
 
     for field in GOOGLE_FORM_REQUIRED_FIELDS:
         if not str(row.get(field, "")).strip():
-            return f"{field} is required"
+            return f"Missing {field}"
 
     regno = str(row["RegNo"]).strip()
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", regno):
@@ -645,6 +885,9 @@ def validate_google_form_row(row):
     course = str(row["Course"]).strip().upper()
     if course not in {"UG", "PG"}:
         return "Course must be UG or PG"
+
+    if not re.fullmatch(r"\d{4}[-_]\d{4}", str(row["Batch"]).strip()):
+        return "Invalid Batch (use YYYY-YYYY)"
 
     for field, pattern in {
         "Mobile": r"\d{7,15}", "Pincode": r"\d{4,10}",
@@ -658,11 +901,62 @@ def validate_google_form_row(row):
     email = str(row.get("Email", "")).strip()
     if email and not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         return "Invalid Email"
-    if row.get("FirstGraduate") and row["FirstGraduate"] not in {"Yes", "No"}:
+    if row.get("FirstGraduate") and row["FirstGraduate"].title() not in {"Yes", "No"}:
         return "FirstGraduate must be Yes or No"
     if row.get("BloodGroup") and row["BloodGroup"] not in ALLOWED_BLOOD_GROUPS:
         return "Invalid BloodGroup"
     return ""
+
+
+def load_google_import_log():
+    """Return IDs of response rows previously processed by the import."""
+
+    try:
+        with open(GOOGLE_IMPORT_LOG_FILE, "r", encoding="utf-8") as file:
+            entries = json.load(file)
+        return set(entries) if isinstance(entries, list) else set()
+    except (OSError, ValueError, TypeError):
+        return set()
+
+
+def save_google_import_log(entries):
+    """Atomically save the local response ledger; never touch the source Sheet."""
+
+    temporary_path = GOOGLE_IMPORT_LOG_FILE + ".tmp"
+    with open(temporary_path, "w", encoding="utf-8") as file:
+        json.dump(sorted(entries), file, indent=2)
+    os.replace(temporary_path, GOOGLE_IMPORT_LOG_FILE)
+
+
+def response_row_id(sheet_row_number, headers, values_row):
+    """Stable ID for one submitted Sheet response, including its physical row."""
+
+    payload = json.dumps(
+        {"row": sheet_row_number, "headers": headers, "values": values_row},
+        ensure_ascii=False,
+        separators=(",", ":")
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def add_import_group_count(result, course, batch, key):
+    label = f"{course} / {batch.replace('_', '-')}"
+    group = result["groups"].setdefault(
+        label, {"new": 0, "updated": 0, "photos": 0, "skipped": 0, "failed": 0}
+    )
+    group[key] += 1
+
+
+def add_import_record(result, row, status, message, photo=""):
+    """Add a secret-free, per-response result for the admin dashboard."""
+
+    result.setdefault("records", []).append({
+        "regno": str(row.get("RegNo", "")).strip() or "(blank)",
+        "name": str(row.get("Name", "")).strip() or "-",
+        "status": status,
+        "photo": photo,
+        "message": message
+    })
 
 
 def google_drive_file_id(value):
@@ -672,8 +966,8 @@ def google_drive_file_id(value):
     return match.group(0) if match else ""
 
 
-def download_google_photo(drive_service, photo_value, regno):
-    """Download one Drive image into the existing local photo folder."""
+def download_google_photo(drive_service, photo_value, course, batch, regno):
+    """Download one Drive image into its exact course/batch photo folder."""
 
     from googleapiclient.http import MediaIoBaseDownload
 
@@ -688,8 +982,13 @@ def download_google_photo(drive_service, photo_value, regno):
             or extension not in {".jpg", ".jpeg", ".png"}:
         raise ValueError("Photo is not a JPG, JPEG, or PNG image")
 
-    destination = os.path.join(PHOTO_FOLDER, secure_filename(regno) + extension)
+    # The application always stores a single canonical JPEG name per RegNo,
+    # regardless of whether the Form upload was JPG, JPEG, or PNG.
+    filename = secure_filename(regno) + ".jpg"
+    destination = get_photo_path(course, batch, filename)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
     temporary_path = None
+    converted_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temporary:
             temporary_path = temporary.name
@@ -700,52 +999,142 @@ def download_google_photo(drive_service, photo_value, regno):
             done = False
             while not done:
                 _, done = downloader.next_chunk()
-        os.replace(temporary_path, destination)
+
+        from PIL import Image, UnidentifiedImageError
+        try:
+            with Image.open(temporary_path) as image:
+                image.verify()
+            with Image.open(temporary_path) as image:
+                if image.mode in {"RGBA", "LA"}:
+                    background = Image.new("RGB", image.size, "white")
+                    background.paste(image, mask=image.getchannel("A"))
+                    image = background
+                elif image.mode != "RGB":
+                    image = image.convert("RGB")
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as converted:
+                    converted_path = converted.name
+                image.save(converted_path, "JPEG")
+        except (OSError, UnidentifiedImageError) as error:
+            raise ValueError("Downloaded photo is not a valid image") from error
+
+        os.replace(converted_path, destination)
+        converted_path = None
         return os.path.basename(destination)
     finally:
         if temporary_path and os.path.exists(temporary_path):
             os.remove(temporary_path)
+        if converted_path and os.path.exists(converted_path):
+            os.remove(converted_path)
+
+
+def google_sheet_row(headers, values_row):
+    """Map configurable Form headers while accepting duplicate `Batch` columns."""
+
+    source_row = {}
+    for position, header in enumerate(headers):
+        value = str(values_row[position]).strip() if position < len(values_row) else ""
+        header = str(header).strip()
+        # Branching Forms may produce two identically titled Batch columns.  The
+        # selected branch is the one non-empty value, so retain it.
+        if value or header not in source_row:
+            source_row[header] = value
+
+    normalized_source = {
+        header.casefold(): value for header, value in source_row.items()
+    }
+    row = {}
+    for field, aliases in GOOGLE_FORM_FIELD_MAPPING.items():
+        row[field] = next(
+            (normalized_source.get(alias.casefold(), "") for alias in aliases
+             if normalized_source.get(alias.casefold(), "")),
+            ""
+        )
+    return row
+
+
+def google_api_status():
+    """Safely test the configured Sheet and response worksheet for an admin."""
+
+    values, response_range, _drive_service, _sheet_id = get_google_form_responses()
+    return {
+        "connection": "SUCCESS",
+        "spreadsheet": "Connected",
+        "worksheet": response_range,
+        "responses_found": max(len(values) - 1, 0),
+        # The Drive client uses the same validated service-account credentials.
+        # Individual file permissions are still reported per response on import.
+        "sheets": "Connected",
+        "drive": "Connected"
+    }
 
 
 def import_google_form_responses():
-    """Merge responses without replacing existing CSV rows."""
+    """Merge new Form rows without replacing existing CSV rows or columns."""
 
-    sheets_service, drive_service, sheet_id = google_services()
-    response_range = os.environ.get("GOOGLE_SHEET_RANGE", "Form Responses 1")
-    values = sheets_service.spreadsheets().values().get(
-        spreadsheetId=sheet_id, range=response_range
-    ).execute().get("values", [])
+    values, response_range, drive_service, sheet_id = get_google_form_responses()
     result = {"new": 0, "updated": 0, "photos": 0, "skipped": 0,
-              "failed": 0, "errors": []}
+              "failed": 0, "errors": [], "groups": {},
+              "connection": "SUCCESS", "spreadsheet": "Connected",
+              "worksheet": response_range, "responses_found": max(len(values) - 1, 0),
+              "records": []}
     if not values:
         return result
 
     headers = [str(header).strip() for header in values[0]]
-    for values_row in values[1:]:
-        row = dict(zip(headers, values_row))
+    imported_ids = load_google_import_log()
+    backup_created = False
+    for sheet_row_number, values_row in enumerate(values[1:], start=2):
+        import_id = response_row_id(sheet_row_number, headers, values_row)
+        row = google_sheet_row(headers, values_row)
         row = {field: str(row.get(field, "")).strip() for field in GOOGLE_FORM_FIELDS}
         validation_error = validate_google_form_row(row)
         regno = row.get("RegNo", "") or "(blank)"
         if validation_error:
             result["skipped"] += 1
             result["errors"].append({"regno": regno, "reason": validation_error})
+            add_import_record(result, row, "SKIPPED", validation_error)
             write_log(f"Skipped Google Form record | {regno} | {validation_error}")
             continue
 
         course = row["Course"].upper()
         batch = row["Batch"].replace("-", "_")
+        csv_path = get_csv_path(course, batch)
+        if not os.path.isfile(csv_path):
+            reason = f"CSV not found for {course} / {batch.replace('_', '-')}"
+            result["skipped"] += 1
+            add_import_group_count(result, course, batch, "skipped")
+            result["errors"].append({"regno": regno, "reason": reason})
+            add_import_record(result, row, "SKIPPED", reason)
+            write_log(f"Skipped Google Form record | {regno} | {reason}")
+            continue
         dataframe = load_csv(course, batch)
-        if dataframe is None:
-            create_empty_batch(course, batch)
-            dataframe = load_csv(course, batch)
         if dataframe is None or "RegNo" not in dataframe.columns:
             result["failed"] += 1
+            add_import_group_count(result, course, batch, "failed")
             result["errors"].append({
                 "regno": regno,
                 "reason": "Target batch CSV could not be loaded"
             })
+            add_import_record(result, row, "FAILED", "Target batch CSV could not be loaded")
             write_log(f"Failed Google Form record | {regno} | Target batch CSV unavailable")
             continue
+
+        # Reuse the application's complete backup facility once per import run,
+        # before the first CSV or photo is changed.
+        if not backup_created:
+            try:
+                create_backup("Automatic Backup Before Google Form Import")
+                backup_created = True
+            except Exception as error:
+                result["failed"] += 1
+                add_import_group_count(result, course, batch, "failed")
+                result["errors"].append({
+                    "regno": regno,
+                    "reason": "Safety backup could not be created"
+                })
+                add_import_record(result, row, "FAILED", "Safety backup could not be created")
+                write_log(f"Failed Google Form record | {regno} | Backup failed: {error}")
+                continue
 
         matches = dataframe[dataframe["RegNo"].astype(str).str.strip() == regno].index
         is_new = len(matches) == 0
@@ -760,31 +1149,55 @@ def import_google_form_responses():
                 value = row[field]
                 dataframe.loc[row_index, field] = format_dob_for_csv(value) if field == "DOB" else value
 
+        photo_failed = False
         if row.get("Photo"):
             try:
-                photo_filename = download_google_photo(drive_service, row["Photo"], regno)
+                photo_filename = download_google_photo(
+                    drive_service, row["Photo"], course, batch, regno
+                )
                 old_photo = str(dataframe.loc[row_index, "Photo"]).strip() if "Photo" in dataframe.columns else ""
                 if "Photo" in dataframe.columns:
                     dataframe.loc[row_index, "Photo"] = photo_filename
                 if old_photo and old_photo != photo_filename:
-                    old_path = os.path.join(PHOTO_FOLDER, secure_filename(old_photo))
+                    old_path = get_existing_photo_path(course, batch, old_photo)
                     if os.path.isfile(old_path):
                         os.remove(old_path)
                 result["photos"] += 1
+                add_import_group_count(result, course, batch, "photos")
                 write_log(f"Photo downloaded | {regno}")
             except Exception:
-                result["failed"] += 1
-                result["errors"].append({"regno": regno, "reason": "Photo download failed"})
-                write_log(f"Failed Google Form record | {regno} | Photo download failed")
+                result.setdefault("photo_warnings", []).append({
+                    "regno": regno,
+                    "reason": "Photo download failed"
+                })
+                write_log(f"Photo warning | {regno} | Photo download failed")
+                photo_failed = True
 
         save_csv(dataframe, course, batch)
         if is_new:
             result["new"] += 1
+            add_import_group_count(result, course, batch, "new")
             write_log(f"New student from Google Form | {regno}")
+            add_import_record(
+                result, row, "NEW",
+                "Imported; photo download failed" if photo_failed else "Imported",
+                "Warning" if photo_failed else ("Downloaded" if row.get("Photo") else "Not provided")
+            )
         else:
             result["updated"] += 1
+            add_import_group_count(result, course, batch, "updated")
             write_log(f"Existing student updated from Google Form | {regno}")
+            add_import_record(
+                result, row, "UPDATED",
+                "Updated; photo download failed" if photo_failed else "Updated",
+                "Warning" if photo_failed else ("Downloaded" if row.get("Photo") else "Not provided")
+            )
+        # Keep a local audit trail. Repeated imports still merge by Course,
+        # Batch, and RegNo so the row is updated rather than duplicated.
+        if not photo_failed:
+            imported_ids.add(import_id)
 
+    save_google_import_log(imported_ids)
     return result
 # ==========================================
 # BACKUP & RESTORE SYSTEM
@@ -1341,6 +1754,10 @@ def create_empty_batch(course,batch):
         encoding="utf-8-sig"
     )
 
+    # Keep each batch's local photo location ready for Form imports and manual
+    # uploads. exist_ok makes this safe if another request creates it first.
+    os.makedirs(get_photo_folder(course, batch), exist_ok=True)
+
 
     return True
 # ==========================================
@@ -1623,11 +2040,14 @@ def admin():
 
         recent_logs=recent_logs,
 
-        import_result=session.pop("import_result", None)
+        import_result=session.pop("import_result", None),
+
+        google_status=session.pop("google_status", None)
 
     )
 
 
+@app.route("/import-google-form", methods=["POST"])
 @app.route("/import-google-responses", methods=["POST"])
 @login_required
 def import_google_responses_route():
@@ -1643,15 +2063,39 @@ def import_google_responses_route():
             f"Failed: {result['failed']}"
         )
     except Exception as error:
+        app.logger.exception("Google API connection failed")
+        safe_reason = google_safe_error_reason(error)
         session["import_result"] = {
             "new": 0, "updated": 0, "photos": 0, "skipped": 0,
+            "connection": "FAILED",
+            "spreadsheet": "Not connected",
             "failed": 1, "errors": [{
                 "regno": "-",
-                "reason": "Google API connection failed. Check server configuration and permissions."
+                "reason": safe_reason
             }]
         }
-        write_log("Google Form import failed | Google API error")
+        write_log(f"Google Form import failed | {safe_reason}")
 
+    return redirect(url_for("admin"))
+
+
+@app.route("/google-api-status", methods=["POST"])
+@app.route("/admin/google-api-status", methods=["POST"])
+@login_required
+def google_api_status_route():
+    """Admin-only, secret-free diagnostic for the existing Google connection."""
+
+    try:
+        session["google_status"] = google_api_status()
+    except Exception as error:
+        app.logger.exception("Google API diagnostic failed")
+        safe_reason = google_safe_error_reason(error)
+        session["google_status"] = {
+            "connection": "FAILED",
+            "spreadsheet": "Not connected",
+            "reason": safe_reason
+        }
+        write_log(f"Google API diagnostic failed | {safe_reason}")
     return redirect(url_for("admin"))
 # ==========================================
 # BACKUP & RESTORE PAGE
@@ -2335,10 +2779,7 @@ def upload_student_photos():
 
         if old_photo:
 
-            old_photo_path = os.path.join(
-                PHOTO_FOLDER,
-                old_photo
-            )
+            old_photo_path = get_existing_photo_path(course, batch, old_photo)
 
             if os.path.exists(
                 old_photo_path
@@ -2366,10 +2807,8 @@ def upload_student_photos():
             + ext
         )
 
-        photo_path = os.path.join(
-            PHOTO_FOLDER,
-            filename
-        )
+        photo_path = get_photo_path(course, batch, filename)
+        os.makedirs(os.path.dirname(photo_path), exist_ok=True)
 
         photo.save(
             photo_path
@@ -2565,12 +3004,9 @@ def save_new_student():
                 filename=regno+ext
 
 
-                photo.save(
-                    os.path.join(
-                        PHOTO_FOLDER,
-                        filename
-                    )
-                )
+                photo_path = get_photo_path(course, batch, filename)
+                os.makedirs(os.path.dirname(photo_path), exist_ok=True)
+                photo.save(photo_path)
 
 
                 new_student["Photo"]=filename
@@ -2633,7 +3069,7 @@ def save_pg():
 
         if old_photo:
 
-            photo_path = os.path.join(PHOTO_FOLDER, old_photo)
+            photo_path = get_existing_photo_path(course, batch, old_photo)
 
             if os.path.exists(photo_path):
                 os.remove(photo_path)
@@ -2659,13 +3095,18 @@ def save_pg():
 
             if allowed_photo(photo.filename):
 
-                ext = os.path.splitext(photo.filename)[1]
+                ext = os.path.splitext(photo.filename)[1].lower()
+                filename = secure_filename(regno) + ext
 
-                filename = regno + ext
+                old_photo = str(df.loc[row, "Photo"]).strip()
+                if old_photo and old_photo != filename:
+                    old_path = get_existing_photo_path(course, batch, old_photo)
+                    if os.path.isfile(old_path):
+                        os.remove(old_path)
 
-                photo.save(
-                    os.path.join(PHOTO_FOLDER, filename)
-                )
+                photo_path = get_photo_path(course, batch, filename)
+                os.makedirs(os.path.dirname(photo_path), exist_ok=True)
+                photo.save(photo_path)
 
                 df.loc[row, "Photo"] = filename
 
@@ -2714,7 +3155,7 @@ def save_ug():
 
         if old_photo:
 
-            photo_path = os.path.join(PHOTO_FOLDER, old_photo)
+            photo_path = get_existing_photo_path(course, batch, old_photo)
 
             if os.path.exists(photo_path):
                 os.remove(photo_path)
@@ -2740,13 +3181,18 @@ def save_ug():
 
             if allowed_photo(photo.filename):
 
-                ext = os.path.splitext(photo.filename)[1]
+                ext = os.path.splitext(photo.filename)[1].lower()
+                filename = secure_filename(regno) + ext
 
-                filename = regno + ext
+                old_photo = str(df.loc[row, "Photo"]).strip()
+                if old_photo and old_photo != filename:
+                    old_path = get_existing_photo_path(course, batch, old_photo)
+                    if os.path.isfile(old_path):
+                        os.remove(old_path)
 
-                photo.save(
-                    os.path.join(PHOTO_FOLDER, filename)
-                )
+                photo_path = get_photo_path(course, batch, filename)
+                os.makedirs(os.path.dirname(photo_path), exist_ok=True)
+                photo.save(photo_path)
 
                 df.loc[row, "Photo"] = filename
 
