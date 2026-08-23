@@ -51,7 +51,7 @@ except ImportError:
 # FOLDERS
 # ==========================================
 
-DATA_FOLDER = "data"
+DATA_FOLDER = os.path.join(BASE_DIR, "data")
 
 UG_FOLDER = os.path.join(
     DATA_FOLDER,
@@ -65,6 +65,7 @@ PG_FOLDER = os.path.join(
 
 
 PHOTO_FOLDER = os.path.join(
+    BASE_DIR,
     "static",
     "photos"
 )
@@ -159,14 +160,14 @@ def format_dob_for_csv(dob):
 # FILES
 # ==========================================
 
-ADMIN_FILE = "admin.json"
+ADMIN_FILE = os.path.join(BASE_DIR, "admin.json")
 
-LOG_FILE = "activity.log"
+LOG_FILE = os.path.join(BASE_DIR, "activity.log")
 
 # This is deliberately separate from the student CSVs. It is an audit ledger of
 # successfully seen Form response rows; RegNo remains the duplicate protection
 # because repeated imports intentionally update an existing student.
-GOOGLE_IMPORT_LOG_FILE = "google_import_log.json"
+GOOGLE_IMPORT_LOG_FILE = os.path.join(BASE_DIR, "google_import_log.json")
 
 # ID of the existing Form response spreadsheet. An explicit environment value
 # still takes precedence so deployments can override it.
@@ -560,27 +561,21 @@ def write_log(message):
 # ==========================================
 
 
-def get_csv_path(course,batch):
+def normalize_course(course):
+    """Normalize course names to the app's canonical values."""
+    return str(course or "").strip().upper()
 
-    course = str(course).strip().upper()
-    batch = str(batch).strip().replace("-", "_")
 
-
+def get_csv_path(course, batch):
+    """Return the CSV path for an exact course/batch combination."""
+    course = normalize_course(course)
+    batch = normalize_batch(batch)
 
     if course == "UG":
-
-        return os.path.join(
-            UG_FOLDER,
-            batch+".csv"
-        )
-
+        return os.path.join(UG_FOLDER, f"{batch}.csv")
 
     if course == "PG":
-
-        return os.path.join(
-            PG_FOLDER,
-            batch+".csv"
-        )
+        return os.path.join(PG_FOLDER, f"{batch}.csv")
 
     raise ValueError("Course must be UG or PG")
 
@@ -817,14 +812,12 @@ def get_google_form_responses():
 
 def normalize_batch(batch):
     """Use the application's underscore batch convention for paths."""
-
     return str(batch or "").strip().replace("-", "_")
 
 
 def get_photo_folder(course, batch):
     """Return the existing static photo directory for one exact course/batch."""
-
-    course = str(course or "").strip().upper()
+    course = normalize_course(course)
     if course not in {"UG", "PG"}:
         raise ValueError("Course must be UG or PG")
     batch = normalize_batch(batch)
@@ -835,16 +828,54 @@ def get_photo_folder(course, batch):
 
 def get_photo_path(course, batch, filename):
     """Safely construct a course/batch photo path without storing it in CSV."""
-
     filename = secure_filename(str(filename or ""))
     if not filename or filename != os.path.basename(filename):
         raise ValueError("Invalid photo filename")
     return os.path.join(get_photo_folder(course, batch), filename)
 
 
+def save_uploaded_photo(photo, course, batch, regno):
+    """Save an uploaded student photo using the register number as its name."""
+    if not photo or not photo.filename:
+        return ""
+    if not allowed_photo(photo.filename):
+        raise ValueError("Photo must be a JPG, JPEG, or PNG file.")
+
+    raw_regno = str(regno or "").strip()
+    safe_regno = secure_filename(raw_regno)
+    if not safe_regno or safe_regno != raw_regno:
+        raise ValueError("Invalid register number for photo filename.")
+
+    extension = os.path.splitext(secure_filename(photo.filename))[1].lower()
+    filename = f"{safe_regno}{extension}"
+    photo_path = get_photo_path(course, batch, filename)
+    photo_folder = os.path.dirname(photo_path)
+    os.makedirs(photo_folder, exist_ok=True)
+
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=photo_folder, prefix=f".{safe_regno}.", suffix=extension,
+            delete=False
+        ) as temporary:
+            temporary_path = temporary.name
+        photo.save(temporary_path)
+        if os.path.getsize(temporary_path) == 0:
+            raise ValueError("The selected photo is empty.")
+        os.replace(temporary_path, photo_path)
+        return filename
+    except (OSError, ValueError) as error:
+        app.logger.warning("Student photo save failed for %s: %s", regno, error)
+        raise ValueError("The student photo could not be saved.") from error
+    finally:
+        if temporary_path and os.path.exists(temporary_path):
+            os.remove(temporary_path)
+
+
 def get_existing_photo_path(course, batch, filename):
     """Use nested storage, with a read/delete fallback for older flat photos."""
-
+    course = normalize_course(course)
+    batch = normalize_batch(batch)
     nested_path = get_photo_path(course, batch, filename)
     if os.path.isfile(nested_path):
         return nested_path
@@ -853,13 +884,14 @@ def get_existing_photo_path(course, batch, filename):
 
 def get_photo_static_path(course, batch, filename):
     """Return an existing static-relative path, or an empty value for no image."""
-
+    course = normalize_course(course)
+    batch = normalize_batch(batch)
     filename = secure_filename(str(filename or ""))
     if not filename:
         return ""
     nested_path = get_photo_path(course, batch, filename)
     if os.path.isfile(nested_path):
-        return f"photos/{str(course).lower()}/{normalize_batch(batch)}/{filename}"
+        return f"photos/{course.lower()}/{batch}/{filename}"
     legacy_path = os.path.join(PHOTO_FOLDER, filename)
     if os.path.isfile(legacy_path):
         return f"photos/{filename}"
@@ -2811,50 +2843,22 @@ def upload_student_photos():
 
         row = student_index[0]
 
-        # ----------------------------------
-        # DELETE OLD PHOTO IF EXISTS
-        # ----------------------------------
-
         old_photo = str(
             df.loc[row, "Photo"]
         ).strip()
+        try:
+            filename = save_uploaded_photo(photo, course, batch, regno)
+        except ValueError:
+            failed.append(f"{original_filename} - Photo could not be saved")
+            continue
 
-        if old_photo:
-
+        if old_photo and old_photo != filename:
             old_photo_path = get_existing_photo_path(course, batch, old_photo)
-
-            if os.path.exists(
-                old_photo_path
-            ):
-
+            if os.path.isfile(old_photo_path):
                 try:
-
-                    os.remove(
-                        old_photo_path
-                    )
-
+                    os.remove(old_photo_path)
                 except OSError:
                     pass
-
-        # ----------------------------------
-        # SAVE PHOTO
-        # ----------------------------------
-
-        ext = os.path.splitext(
-            original_filename
-        )[1].lower()
-
-        filename = (
-            secure_filename(regno)
-            + ext
-        )
-
-        photo_path = get_photo_path(course, batch, filename)
-        os.makedirs(os.path.dirname(photo_path), exist_ok=True)
-
-        photo.save(
-            photo_path
-        )
 
         # ----------------------------------
         # UPDATE CSV PHOTO COLUMN
@@ -2976,9 +2980,8 @@ def add_student():
 def save_new_student():
 
 
-    course=request.form["course"]
-
-    batch=request.form["batch"]
+    course = normalize_course(request.form.get("course", ""))
+    batch = normalize_batch(request.form.get("batch", ""))
 
 
     df=load_csv(
@@ -3086,8 +3089,8 @@ def save_new_student():
 @login_required
 def save_pg():
 
-    course = request.form["course"].upper()
-    batch = request.form["batch"].replace("-", "_")
+    course = normalize_course(request.form.get("course", ""))
+    batch = normalize_batch(request.form.get("batch", ""))
     regno = request.form["RegNo"]
 
     df = load_csv(course, batch)
@@ -3105,7 +3108,8 @@ def save_pg():
     row = index[0]
 
     # Remove Photo
-    if request.form.get("remove_photo") == "1":
+    photo = request.files.get("Photo")
+    if request.form.get("remove_photo") == "1" and not (photo and photo.filename):
 
         old_photo = df.loc[row, "Photo"]
 
@@ -3128,29 +3132,19 @@ def save_pg():
     df.loc[row, "DOB"]
 )
 
-    # Upload New Photo
-    if "Photo" in request.files:
-
-        photo = request.files["Photo"]
-
-        if photo.filename != "":
-
-            if allowed_photo(photo.filename):
-
-                ext = os.path.splitext(photo.filename)[1].lower()
-                filename = secure_filename(regno) + ext
-
-                old_photo = str(df.loc[row, "Photo"]).strip()
-                if old_photo and old_photo != filename:
-                    old_path = get_existing_photo_path(course, batch, old_photo)
-                    if os.path.isfile(old_path):
-                        os.remove(old_path)
-
-                photo_path = get_photo_path(course, batch, filename)
-                os.makedirs(os.path.dirname(photo_path), exist_ok=True)
-                photo.save(photo_path)
-
-                df.loc[row, "Photo"] = filename
+    if photo and photo.filename:
+        old_photo = str(df.loc[row, "Photo"]).strip()
+        try:
+            filename = save_uploaded_photo(photo, course, batch, regno)
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("student_search", course=course, batch=batch,
+                                    search_type="regno", keyword=regno))
+        df.loc[row, "Photo"] = filename
+        if old_photo and old_photo != filename:
+            old_path = get_existing_photo_path(course, batch, old_photo)
+            if os.path.isfile(old_path):
+                os.remove(old_path)
 
     save_csv(df, course, batch)
 
@@ -3172,8 +3166,8 @@ def save_pg():
 @login_required
 def save_ug():
 
-    course = request.form["course"].upper()
-    batch = request.form["batch"].replace("-", "_")
+    course = normalize_course(request.form.get("course", ""))
+    batch = normalize_batch(request.form.get("batch", ""))
     regno = request.form["RegNo"]
 
     df = load_csv(course, batch)
@@ -3191,7 +3185,8 @@ def save_ug():
     row = student_index[0]
 
     # Remove Photo
-    if request.form.get("remove_photo") == "1":
+    photo = request.files.get("Photo")
+    if request.form.get("remove_photo") == "1" and not (photo and photo.filename):
 
         old_photo = df.loc[row, "Photo"]
 
@@ -3214,29 +3209,19 @@ def save_ug():
     df.loc[row, "DOB"]
 )
 
-    # Upload New Photo
-    if "Photo" in request.files:
-
-        photo = request.files["Photo"]
-
-        if photo.filename != "":
-
-            if allowed_photo(photo.filename):
-
-                ext = os.path.splitext(photo.filename)[1].lower()
-                filename = secure_filename(regno) + ext
-
-                old_photo = str(df.loc[row, "Photo"]).strip()
-                if old_photo and old_photo != filename:
-                    old_path = get_existing_photo_path(course, batch, old_photo)
-                    if os.path.isfile(old_path):
-                        os.remove(old_path)
-
-                photo_path = get_photo_path(course, batch, filename)
-                os.makedirs(os.path.dirname(photo_path), exist_ok=True)
-                photo.save(photo_path)
-
-                df.loc[row, "Photo"] = filename
+    if photo and photo.filename:
+        old_photo = str(df.loc[row, "Photo"]).strip()
+        try:
+            filename = save_uploaded_photo(photo, course, batch, regno)
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("student_search", course=course, batch=batch,
+                                    search_type="regno", keyword=regno))
+        df.loc[row, "Photo"] = filename
+        if old_photo and old_photo != filename:
+            old_path = get_existing_photo_path(course, batch, old_photo)
+            if os.path.isfile(old_path):
+                os.remove(old_path)
 
     save_csv(df, course, batch)
 
@@ -3474,8 +3459,8 @@ def timetable():
 @login_required
 def delete_batch():
 
-    course = request.form["course"].upper()
-    batch = request.form["batch"].strip().replace("-", "_")
+    course = normalize_course(request.form.get("course", ""))
+    batch = normalize_batch(request.form.get("batch", ""))
 
     path = get_csv_path(course, batch)
 
@@ -3500,11 +3485,8 @@ def delete_batch():
 @login_required
 def add_batch():
 
-    course = request.form["course"].upper()
-
-    batch = request.form["batch"].strip()
-    batch = batch.replace("-", "_")
-
+    course = normalize_course(request.form.get("course", ""))
+    batch = normalize_batch(request.form.get("batch", ""))
 
     result = create_empty_batch(course,batch)
     if result:
@@ -3537,8 +3519,8 @@ def student_search():
     # warning when the user clicks Back or Refresh.
     search_data = request.args if request.method == "GET" else request.form
 
-    course = search_data["course"].upper()
-    batch = search_data["batch"].strip().replace("-", "_")
+    course = normalize_course(search_data.get("course", ""))
+    batch = normalize_batch(search_data.get("batch", ""))
     search_type = search_data["search_type"]
     keyword = search_data["keyword"].strip()
 

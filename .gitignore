@@ -1,11 +1,98 @@
+# ==========================================
+# RUNTIME DATA - NEVER TRACK
+# ==========================================
+
+# Student CSV data files (but keep folder structure)
+data/**/*.csv
+data/**/*.xlsx
+data/**/*.xls
+
+# Activity and application logs
+activity.log
+*.log
+
+# Admin configuration (contains sensitive login info)
+admin.json
+
+# Student photos
+static/photos/*
+!static/photos/.gitkeep
+
+# File uploads
+uploads/*
+!uploads/.gitkeep
+
+# Backup files
+backups/*
+!backups/.gitkeep
+
+# Google credentials
+secrets/
+secrets/google-service-account.json
+
+
+# ==========================================
+# PYTHON ENVIRONMENT & CACHE
+# ==========================================
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
 .venv/
 venv/
-__pycache__/
-*.pyc
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Python environment variables
 .env
-secrets/
+.env.local
+.env.*.local
+
+
+# ==========================================
+# IDE & EDITOR
+# ==========================================
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# General editor files
+*.swp
+*.swo
+*~
+.DS_Store
+
+
+# ==========================================
+# TEMPORARY & BUILD FILES
+# ==========================================
+
+# Flask
+instance/
+.webassets-cache
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# General JSON files (except config-related ones)
 *.json
-activity.log
-data/
-backups/
-static/photos/
+!requirements.json
+!package.json
