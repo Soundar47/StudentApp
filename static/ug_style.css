@@ -1,1628 +1,1060 @@
-/* ==========================
+/* =========================================================
+   UG STUDENT RECORD
+   Clean Final CSS
+   ========================================================= */
+
+/* =========================
    RESET
-========================== */
+========================= */
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* ==========================
-   BODY
-========================== */
-
-body{
-
-    font-family:"Times New Roman", serif;
-    background:#f2f2f2;
-    color:#000;
-    font-size:14px;
-
+html {
+    scroll-behavior: smooth;
 }
 
-/* ==========================
-   CONTAINER
-========================== */
-
-.container{
-
-    width:210mm;
-    min-height:297mm;
-
-    margin:20px auto;
-
-    background:#fff;
-
-    padding:18px;
-
-    border:1px solid #000;
-
-    box-shadow:0 0 8px rgba(0,0,0,.15);
-
+body {
+    font-family: "Times New Roman", serif;
+    background: #f2f2f2;
+    color: #000;
+    font-size: 14px;
 }
 
-/* ==========================
+
+/* =========================
+   MAIN CONTAINER
+========================= */
+
+.container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    padding: 18px;
+    background: #fff;
+    border: 1px solid #000;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+
+/* =========================
    HEADER
-========================== */
+========================= */
 
-.header{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
+.header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
 }
 
-.logo{
-
-    width:95px;
-
-    height:95px;
-
+.logo {
+    width: 95px;
+    height: 95px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 
-.photo{
-
-    width:110px;
-
-    height:130px;
-
-    border:1px solid #000;
-
-    object-fit:cover;
-
+.title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
 }
 
-.title{
-
-    flex:1;
-
-    text-align:center;
-
+.title h2 {
+    font-size: 22px;
+    line-height: 1.15;
+    margin-bottom: 5px;
 }
 
-.title h2{
-
-    font-size:22px;
-
-    margin-bottom:5px;
-
+.title h3 {
+    font-size: 17px;
+    line-height: 1.15;
+    margin-bottom: 4px;
 }
 
-.title h3{
-
-    font-size:17px;
-
-    margin-bottom:4px;
-
+.photo-box {
+    width: 110px;
+    flex-shrink: 0;
+    text-align: center;
 }
 
-.course{
-
-    margin:10px 0;
-
-    text-align:center;
-
-    font-size:18px;
-
-    font-weight:bold;
-
+.photo {
+    width: 110px;
+    height: 130px;
+    display: block;
+    object-fit: cover;
+    border: 1px solid #000;
+    margin: 0 auto;
 }
 
-/* Course & Batch fields must NOT stretch full width like other
-   editable fields, or they break onto their own centered line
-   and split "COURSE :" from the course name / batch bracket. */
-
-.course input[name="Course"]{
-
-    width:auto;
-    display:inline;
-    text-align:center;
-
+.photo-unavailable {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 12px;
+    background: #fafafa;
 }
 
-.course input[name="Batch"]{
 
-    display:inline;
-    text-align:center;
+/* =========================
+   HORIZONTAL LINE
+========================= */
 
+hr {
+    margin: 10px 0;
+    border: 0;
+    border-top: 1px solid #000;
 }
 
-/* ==========================
-   EDITABLE INPUTS
-========================== */
 
-.editable{
+/* =========================
+   COURSE / BATCH
+========================= */
 
-    width:100%;
-    border:none;
-    outline:none;
-    background:transparent;
-    font-family:"Times New Roman", serif;
-    font-size:14px;
-    color:#000;
-    padding:2px 4px;
-    box-sizing:border-box;
+.course {
+    margin: 10px 0;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 1.4;
 }
 
-/* Read Only */
-
-.editable[readonly]{
-
-    border:none;
-
-    background:transparent;
-
-    pointer-events:none;
-
-    cursor:default;
-
+.course input {
+    width: auto;
+    display: inline-block;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: bold;
+    text-align: center;
 }
 
-/* Editing Mode */
-
-.editable:not([readonly]){
-
-    border:1px solid #1976d2;
-
-    background:#fff;
-
+.course input[name="Course"] {
+    width: 200px;
 }
 
-.editable:focus{
-
-    outline:none;
-
-    border:1px solid #1565c0;
-
-}
-/* ==========================
-   STUDENT DETAILS
-   (borderless / non-table look, per request)
-========================== */
-
-.info{
-
-    width:100%;
-
-    border-collapse:collapse;
-
-    margin-top:10px;
-
+.course input[name="Batch"] {
+    width: 100px;
 }
 
-.info td{
 
-    border:none;
-
-    padding:5px 8px;
-
-    font-size:14px;
-
-    vertical-align:middle;
-
-}
-
-/* Keep labels compact and reserve more room for student values. */
-.info td:nth-child(odd){
-
-    width:12%;
-
-    white-space:nowrap;
-
-}
-
-.info input{
-
-    width:100%;
-
-}
-
-.label{
-
-    width:15%;
-
-    font-weight:bold;
-
-    background:transparent;
-
-}
-
-/* ==========================
-   EXAMINATION TABLE
-========================== */
-
-.exam-table{
-
-    width:100%;
-
-    border-collapse:collapse;
-
-    table-layout:fixed;
-
-    margin-top:8px;
-
-}
-
-.exam-table th{
-
-    border:1px solid #000;
-
-    background:#efefef;
-
-    padding:5px;
-
-    font-size:12px;
-
-    font-weight:bold;
-
-}
-
-.exam-table td{
-
-    border:1px solid #000;
-
-    padding:3px;
-
-    height:28px;
-
-    text-align:center;
-
-    font-size:11px;
-
-}
-
-.exam-table tr:first-child th{
-
-    font-size:14px;
-
-    background:#dcdcdc;
-
-}
-
-.exam-table input{
-
-    width:100%;
-
-    text-align:center;
-
-    font-size:11px;
-
-}
-
-/* Subject code column: wider + left aligned so codes like
-   26UCA17W / 26ULT3/H3 don't look cramped against numeric columns */
-
-.exam-table td:first-child,
-.exam-table td:nth-child(6),
-.exam-table td:nth-child(11){
-
-    font-weight:bold;
-
-    text-align:left;
-
-    padding-left:4px;
-
-    font-size:10.5px;
-
-    white-space:nowrap;
-
-}
-
-/* ==========================
-   ATTENDANCE
-========================== */
-
-.attendance{
-
-    width:100%;
-
-    border-collapse:collapse;
-
-    margin-top:10px;
-
-}
-
-.attendance th{
-
-    border:1px solid #000;
-
-    background:#efefef;
-
-    padding:8px;
-
-}
-
-.attendance td{
-
-    border:1px solid #000;
-
-    text-align:center;
-
-    padding:6px;
-
-}
-
-.attendance input{
-
-    width:100%;
-
-    text-align:center;
-
-}
-
-/* ==========================
-   SIGNATURE
-========================== */
-
-.signature{
-
-    width:100%;
-
-    border:none;
-
-    margin-top:30px;
-
-}
-
-.signature td{
-
-    border:none;
-
-    font-size:15px;
-
-    vertical-align:bottom;
-
-}
-
-.signature td:last-child{
-
-    text-align:right;
-
-}
-
-.signature input{
-
-    border:none;
-
-    background:transparent;
-
-    text-align:right;
-
-    font-weight:bold;
-
-    width:200px;
-
-}
-/* ==========================
-   BUTTON BAR
-========================== */
-
-.button-bar{
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    gap:15px;
-
-    margin:25px 0;
-
-    flex-wrap:wrap;
-
-}
-
-/* ==========================
-   COMMON BUTTON
-========================== */
-
-.button-bar button{
-
-    min-width:150px;
-
-    height:42px;
-
-    border:none;
-
-    border-radius:6px;
-
-    cursor:pointer;
-
-    font-size:16px;
-
-    font-weight:600;
-
-    font-family:"Times New Roman", serif;
-
-    transition:.3s;
-
-    color:#fff;
-
-}
-
-/* ==========================
-   CHANGE BUTTON
-========================== */
-
-#changeBtn{
-
-    background:#1976d2;
-
-}
-
-#changeBtn:hover{
-
-    background:#1259a7;
-
-}
-
-/* ==========================
-   SAVE BUTTON
-========================== */
-
-#saveBtn{
-
-    background:#2e7d32;
-
-}
-
-#saveBtn:hover{
-
-    background:#1b5e20;
-
-}
-
-/* ==========================
-   PRINT BUTTON
-========================== */
-
-.button-bar button[onclick="printPage()"]{
-
-    background:#ef6c00;
-
-}
-
-.button-bar button[onclick="printPage()"]:hover{
-
-    background:#d45b00;
-
-}
-
-/* ==========================
-   BACK BUTTON
-========================== */
-
-.button-bar .back-btn{
-
-    background:#616161;
-
-}
-
-.button-bar .back-btn:hover{
-
-    background:#424242;
-
-}
-
-/* ==========================
-   GENERAL EFFECT
-========================== */
-
-.button-bar button:hover{
-
-    transform:translateY(-2px);
-
-    box-shadow:0 3px 8px rgba(0,0,0,.25);
-
-}
-
-.button-bar button:active{
-
-    transform:scale(.98);
-
-}
-
-/* ==========================
-   SUCCESS MESSAGE
-========================== */
-
-.message{
-
-    width:100%;
-
-    text-align:center;
-
-    color:#2e7d32;
-
-    font-size:16px;
-
-    font-weight:bold;
-
-    margin:10px 0;
-
-}
-
-/* ==========================
-   ERROR MESSAGE
-========================== */
-
-.error{
-
-    width:100%;
-
-    text-align:center;
-
-    color:#c62828;
-
-    font-size:16px;
-
-    font-weight:bold;
-
-    margin:10px 0;
-
-}
-/* ==========================
-   PRINT SETTINGS
-========================== */
-
-@page{
-
-    size:A4 portrait;
-
-    margin:4mm;
-
-}
-
-@media print{
-
-/* ==========================
-   PAGE
-========================== */
-
-body{
-
-    background:#fff;
-
-    margin:0;
-
-    padding:0;
-
-    width:210mm;
-
-    min-height:297mm;
-
-    -webkit-print-color-adjust:exact;
-
-    print-color-adjust:exact;
-
-}
-
-.container{
-
-    width:100%;
-
-    margin:0;
-
-    padding:8px;
-
-    border:1px solid #000;
-
-    box-shadow:none;
-
-}
-
-/* ==========================
-   HIDE BUTTONS
-========================== */
-
-.no-print,
-.button-bar,
-button{
-
-    display:none !important;
-
-}
-
-/* ==========================
-   INPUTS LOOK LIKE TEXT
-========================== */
+/* =========================
+   COMMON INPUTS
+========================= */
 
 input,
 textarea,
-select{
-
-    border:none !important;
-
-    outline:none !important;
-
-    background:transparent !important;
-
-    box-shadow:none !important;
-
-    color:#000 !important;
-
-    font:inherit !important;
-
-    padding:0 !important;
-
-    margin:0 !important;
-
-    appearance:none;
-
-    -webkit-appearance:none;
-
+select {
+    font-family: "Times New Roman", serif;
+    color: #000;
 }
 
-/* Read-only inputs */
-
-.editable{
-
-    border:none !important;
-
-    background:transparent !important;
-
+input[readonly],
+textarea[readonly] {
+    outline: none;
+    cursor: default;
 }
 
-/* ==========================
-   TABLES
-========================== */
-
-table{
-
-    page-break-inside:avoid;
-
+input:not([readonly]),
+textarea:not([readonly]) {
+    border: 1px solid #1976d2 !important;
+    background: #fff !important;
+    outline: none;
 }
 
-tr{
 
-    page-break-inside:avoid;
+/* =========================
+   STUDENT INFORMATION TABLE
+========================= */
 
+.info {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-top: 10px;
 }
 
-td,
-th{
-
-    page-break-inside:avoid;
-
+.info td {
+    border: 1px solid #000;
+    padding: 5px 6px;
+    font-size: 14px;
+    vertical-align: middle;
 }
 
-img{
-
-    page-break-inside:avoid;
-
+.info td:nth-child(odd) {
+    width: 13%;
+    font-weight: bold;
+    white-space: nowrap;
 }
 
-/* ==========================
-   HEADER
-========================== */
-
-.logo{
-
-    width:90px;
-
-    height:90px;
-
+.info td:nth-child(even) {
+    width: 20.33%;
 }
 
-.photo{
-
-    width:105px;
-
-    height:125px;
-
+.info input,
+.info textarea {
+    width: 100%;
+    max-width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    color: #000;
+    padding: 2px;
 }
 
-.title h2{
-
-    font-size:20px;
-
+.info textarea {
+    resize: none;
+    display: block;
 }
 
-.title h3{
 
-    font-size:16px;
+/* =========================
+   SECTION TITLE
+========================= */
 
+.section-title {
+    margin-top: 8px;
+    margin-bottom: 5px;
+    font-size: 16px;
 }
 
-.course{
 
-    font-size:17px;
+/* =========================
+   EXAM TABLE WRAPPER
+========================= */
 
+.exam-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
-/* ==========================
-   STUDENT DETAILS
-========================== */
 
-.info td{
+/* =========================
+   EXAMINATION TABLE
+========================= */
 
-    font-size:12px;
-
-    padding:5px;
-
+.exam-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-top: 8px;
 }
 
-/* ==========================
-   EXAM TABLE
-========================== */
-
-.exam-table th{
-
-    font-size:11px;
-
+.exam-table th,
+.exam-table td {
+    border: 1px solid #000;
 }
 
-.exam-table td{
-
-    font-size:10px;
-
-    height:24px;
-
-    padding:2px;
-
+.exam-table th {
+    background: #efefef;
+    padding: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    vertical-align: middle;
 }
 
-/* ==========================
+.exam-table tr:first-child th {
+    background: #dcdcdc;
+    font-size: 14px;
+}
+
+.exam-table td {
+    height: 28px;
+    padding: 3px;
+    text-align: center;
+    font-size: 11px;
+    vertical-align: middle;
+}
+
+.exam-table td:first-child,
+.exam-table td:nth-child(6),
+.exam-table td:nth-child(11) {
+    font-weight: bold;
+    text-align: left;
+    padding-left: 4px;
+    font-size: 10.5px;
+    white-space: nowrap;
+}
+
+.exam-table input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    text-align: center;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 1px;
+}
+
+
+/* =========================
    ATTENDANCE
-========================== */
+========================= */
+
+.attendance {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin-top: 10px;
+}
 
 .attendance th,
-.attendance td{
-
-    font-size:11px;
-
-    padding:5px;
-
+.attendance td {
+    border: 1px solid #000;
+    text-align: center;
+    vertical-align: middle;
 }
 
-/* ==========================
-   SIGNATURE
-========================== */
-
-.signature td{
-
-    font-size:13px;
-
+.attendance th {
+    background: #efefef;
+    padding: 7px;
+    font-size: 12px;
 }
 
-/* ==========================
-   REMOVE LINK COLORS
-========================== */
-
-a{
-
-    color:#000;
-
-    text-decoration:none;
-
+.attendance td {
+    padding: 5px;
+    font-size: 11px;
 }
 
-}
-/* ==========================
-   RESPONSIVE SCREEN VIEW
-   MOBILE + TABLET SUPPORT
-========================== */
-
-
-/* Tablet */
-
-@media screen and (max-width:900px){
-
-    .container{
-
-        width:95%;
-
-        min-height:auto;
-
-        margin:15px auto;
-
-        padding:15px;
-
-    }
-
-
-    .header{
-
-        gap:15px;
-
-    }
-
-
-    .logo{
-
-        width:75px;
-
-        height:75px;
-
-    }
-
-
-    .photo{
-
-        width:90px;
-
-        height:110px;
-
-    }
-
-
-    .title h2{
-
-        font-size:18px;
-
-    }
-
-
-    .title h3{
-
-        font-size:14px;
-
-    }
-
-
-    .exam-table{
-
-        overflow-x:auto;
-
-        display:block;
-
-    }
-
-
+.attendance input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    text-align: center;
+    font-family: inherit;
+    font-size: 11px;
 }
 
 
-
-/* Mobile */
-
-@media screen and (max-width:600px){
-
-
-    body{
-
-        font-size:13px;
-
-    }
-
-
-    .container{
-
-        width:100%;
-
-        margin:0;
-
-        padding:10px;
-
-        border:none;
-
-        box-shadow:none;
-
-    }
-
-
-
-    .header{
-
-        flex-direction:column;
-
-        text-align:center;
-
-    }
-
-
-
-    .logo{
-
-        width:70px;
-
-        height:70px;
-
-    }
-
-
-
-    .photo{
-
-        width:90px;
-
-        height:110px;
-
-    }
-
-
-
-    .title h2{
-
-        font-size:17px;
-
-    }
-
-
-    .title h3{
-
-        font-size:13px;
-
-    }
-
-
-
-    .course{
-
-        font-size:15px;
-
-    }
-
-
-
-    /* Student Details */
-
-    .info{
-
-        display:block;
-
-    }
-
-
-    .info td{
-
-        display:block;
-
-        width:100%;
-
-        padding:4px;
-
-    }
-
-
-    .label{
-
-        width:100%;
-
-    }
-
-
-
-    /* Exam table scrolling */
-
-    .exam-table{
-
-        display:block;
-
-        overflow-x:auto;
-
-        white-space:nowrap;
-
-    }
-
-
-
-    .exam-table th,
-    .exam-table td{
-
-        font-size:10px;
-
-        padding:3px;
-
-    }
-
-
-
-    /* Attendance */
-
-    .attendance{
-
-        display:block;
-
-        overflow-x:auto;
-
-    }
-
-
-
-    .button-bar{
-
-        flex-direction:column;
-
-    }
-
-
-
-    .button-bar button{
-
-        width:100%;
-
-    }
-
-
-
-    .signature td{
-
-        display:block;
-
-        text-align:center !important;
-
-        padding-top:20px;
-
-    }
-
-
-
+/* =========================
+   SIGNATURE SECTION
+========================= */
+
+.signature {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+}
+
+.signature td {
+    border: none;
+    font-size: 14px;
+    vertical-align: bottom;
+}
+
+.signature td:first-child {
+    text-align: left;
+}
+
+.signature td:last-child {
+    text-align: right;
 }
 
 
+/* =========================
+   MESSAGE
+========================= */
 
-/* ==========================
-   INPUT AUTO SIZE
-========================== */
-
-
-.course input{
-
-    font-weight:bold;
-
+.message {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    text-align: center;
+    color: #2e7d32;
+    background: #e8f5e9;
+    border: 1px solid #2e7d32;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 
-.info input{
+/* =========================
+   BUTTON BAR
+========================= */
 
-    min-width:0;
+.button-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin: 25px auto;
+    flex-wrap: wrap;
+}
 
+.button-bar button {
+    min-width: 150px;
+    height: 42px;
+    padding: 0 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #fff;
+    font-family: "Times New Roman", serif;
+    font-size: 16px;
+    font-weight: bold;
+    transition: 0.2s ease;
+}
+
+.button-bar button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+.button-bar button:active {
+    transform: scale(0.98);
 }
 
 
+/* =========================
+   BUTTON COLORS
+========================= */
 
-/* ==========================
-   PREVENT BREAKING
-========================== */
+#changeBtn {
+    background: #1976d2;
+}
 
+#changeBtn:hover {
+    background: #1259a7;
+}
 
-.container,
-.header,
-.exam-table,
-.attendance,
-.signature{
+#saveBtn {
+    background: #2e7d32;
+}
 
-    page-break-inside:avoid;
+#saveBtn:hover {
+    background: #1b5e20;
+}
 
+.delete-btn {
+    background: #d32f2f;
+}
+
+.delete-btn:hover {
+    background: #b71c1c;
+}
+
+.print-btn {
+    background: #ef6c00;
+}
+
+.print-btn:hover {
+    background: #d45b00;
+}
+
+.back-btn {
+    background: #616161;
+}
+
+.back-btn:hover {
+    background: #424242;
 }
 
 
+/* =========================
+   HIDDEN
+========================= */
 
-/* ==========================
-   SMOOTH TRANSITION
-========================== */
+.hidden {
+    display: none !important;
+}
 
-
-input,
-button{
-
-    transition:.2s ease;
-
+.no-print {
+    display: block;
 }
 
 
+/* =========================================================
+   TABLET
+========================================================= */
 
-/* ==========================
-   DISABLED STYLE
-========================== */
+@media screen and (max-width: 900px) {
 
-
-button:disabled{
-
-    opacity:.6;
-
-    cursor:not-allowed;
-
-}
-
-/* Compact A4-only overrides. These rules do not affect the screen layout. */
-@media print{
-    html,
-    body{
-        width:100%;
-        height:auto;
-        min-height:0;
-        margin:0;
-        padding:0;
-        background:#fff;
-        color:#000;
-        font-family:"Times New Roman", serif;
-        font-size:8pt;
-        line-height:1.05;
-    }
-
-    .container{
-        width:100%;
-        min-height:auto !important;
-        height:auto !important;
-        margin:0;
-        padding:2mm;
-        border:0.25mm solid #000;
-        box-shadow:none;
-    }
-
-    .no-print,
-    .button-bar,
-    button,
-    #photoInput,
-    #removePhotoBtn,
-    .success,
-    .message,
-    .error{
-        display:none !important;
-    }
-
-    input,
-    textarea,
-    select{
-        min-height:0 !important;
-        height:auto !important;
-        margin:0 !important;
-        padding:0 !important;
-        border:0 !important;
-        outline:0 !important;
-        background:transparent !important;
-        box-shadow:none !important;
-        color:#000 !important;
-        font:inherit !important;
-        line-height:1.05 !important;
-        appearance:none;
-        -webkit-appearance:none;
-    }
-
-    .header{
-        gap:2mm;
-        align-items:center;
-        margin:0;
-        padding:0;
-    }
-
-    .logo{
-        width:42px;
-        height:42px;
-    }
-
-    .photo{
-        width:48px;
-        height:58px;
-        border-width:0.25mm;
-    }
-
-    .photo-box{
-        gap:0;
-    }
-
-    .title h2,
-    .title h3{
-        margin:0;
-        line-height:1.05;
-        text-align:center;
-    }
-
-    .title h2{
-        font-size:10pt;
-    }
-
-    .title h3{
-        font-size:8pt;
-    }
-
-    hr{
-        margin:1mm 0;
-        border-width:0.25mm 0 0;
-    }
-
-    h3,
-    .course{
-        margin:1mm 0 0;
-        font-size:8pt;
-        line-height:1.05;
-    }
-
-    .info,
-    .exam-table,
-    .attendance,
-    .signature{
-        width:100%;
-        margin:1mm 0 0;
-        border-collapse:collapse;
-        table-layout:fixed;
-    }
-
-    .info td{
-        padding:0.45mm 0.65mm;
-        font-size:7pt;
-        line-height:1.05;
-        vertical-align:middle;
-    }
-
-    .info textarea{
-        line-height:1.05 !important;
-        resize:none;
-    }
-
-    table{
-        break-inside:auto;
-        page-break-inside:auto;
-    }
-
-    .exam-table{
-        break-inside:avoid-page;
-        page-break-inside:avoid;
-    }
-
-    .exam-table th,
-    .exam-table td{
-        padding:0.35mm;
-        font-size:6.4pt;
-        line-height:1.02;
-        height:3.3mm;
-        vertical-align:middle;
-    }
-
-    .exam-table th,
-    .exam-table tr:first-child th{
-        font-size:6.8pt;
-        padding:0.45mm 0.35mm;
-    }
-
-    .exam-table td:first-child,
-    .exam-table td:nth-child(6),
-    .exam-table td:nth-child(11){
-        padding-left:0.45mm;
-        font-size:6.2pt;
-    }
-
-    .exam-table input{
-        font-size:6.2pt !important;
-        line-height:1 !important;
-    }
-
-    .attendance th,
-    .attendance td{
-        padding:0.45mm;
-        font-size:6.8pt;
-        line-height:1.05;
-    }
-
-    .signature{
-        margin-top:1mm;
-    }
-
-    .signature td,
-    .signature input{
-        font-size:7pt !important;
-        line-height:1.05 !important;
-    }
-
-    .exam-table + br,
-    .exam-table + br + br,
-    .signature + br,
-    .signature + br + br{
-        display:none;
-    }
-
-    tr{
-        break-inside:avoid;
-        page-break-inside:avoid;
-    }
-
-    a{
-        color:#000;
-        text-decoration:none;
-    }
-}
-
-
-
-/* ==========================
-   HIDDEN ELEMENT
-========================== */
-
-
-.hidden{
-
-    display:none !important;
-
-}
-/* ==========================================
-   UG RESULT - MOBILE FIX
-   Add this at the VERY END of ug_style.css
-========================================== */
-
-@media screen and (max-width: 768px) {
-
-    /* Main page */
     .container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 8px !important;
-        overflow-x: hidden !important;
+        width: 95%;
+        min-height: auto;
+        margin: 15px auto;
+        padding: 15px;
     }
 
-    /* Header */
     .header {
-        width: 100% !important;
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        gap: 6px !important;
+        gap: 10px;
     }
 
     .logo {
-        width: 55px !important;
-        height: 55px !important;
-        flex-shrink: 0 !important;
-    }
-
-    .title {
-        flex: 1 !important;
-        min-width: 0 !important;
-        text-align: center !important;
-    }
-
-    .title h2 {
-        font-size: 15px !important;
-        line-height: 1.15 !important;
-        margin: 0 0 3px !important;
-    }
-
-    .title h3 {
-        font-size: 12px !important;
-        line-height: 1.15 !important;
-        margin: 0 !important;
+        width: 75px;
+        height: 75px;
     }
 
     .photo-box {
-        width: 65px !important;
-        flex-shrink: 0 !important;
+        width: 90px;
     }
 
     .photo {
-        width: 60px !important;
-        height: 75px !important;
+        width: 90px;
+        height: 110px;
     }
 
-
-    /* Course */
-    .course {
-        width: 100% !important;
-        font-size: 14px !important;
-        text-align: center !important;
-        white-space: normal !important;
-        margin: 8px 0 !important;
+    .title h2 {
+        font-size: 18px;
     }
 
-    .course input[name="Course"] {
-        width: auto !important;
-        max-width: 50% !important;
-        min-width: 0 !important;
-        display: inline !important;
-    }
-
-    .course input[name="Batch"] {
-        width: 70px !important;
-        display: inline !important;
-    }
-
-
-    /* Student information */
-    .info {
-        width: 100% !important;
-        display: table !important;
-        table-layout: fixed !important;
-        border-collapse: collapse !important;
-    }
-
-    .info tr {
-        display: table-row !important;
+    .title h3 {
+        font-size: 14px;
     }
 
     .info td {
-        display: table-cell !important;
-        width: auto !important;
-        padding: 4px 3px !important;
-        font-size: 11px !important;
-        vertical-align: middle !important;
-    }
-
-    .info td:nth-child(odd) {
-        width: 23% !important;
-        white-space: nowrap !important;
-    }
-
-    .info td:nth-child(even) {
-        width: 27% !important;
+        font-size: 12px;
     }
 
     .info input,
     .info textarea {
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        font-size: 11px !important;
-        padding: 2px !important;
-    }
-
-
-    /* =====================================
-       IMPORTANT: UG EXAM TABLE
-    ===================================== */
-
-    .exam-table-wrapper {
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        display: block !important;
-        -webkit-overflow-scrolling: touch !important;
+        font-size: 12px;
     }
 
     .exam-table {
-        width: 850px !important;
-        min-width: 850px !important;
-        max-width: none !important;
-        table-layout: fixed !important;
-        display: table !important;
-        margin-top: 8px !important;
+        width: 850px;
+        min-width: 850px;
     }
 
-    .exam-table tr {
-        display: table-row !important;
+    .attendance {
+        min-width: 650px;
+    }
+
+    .attendance-wrapper {
+        overflow-x: auto;
+        width: 100%;
+    }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media screen and (max-width: 768px) {
+
+    body {
+        background: #fff;
+        font-size: 13px;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 100%;
+        min-height: auto;
+        margin: 0;
+        padding: 8px;
+        border: none;
+        box-shadow: none;
+        overflow-x: hidden;
+    }
+
+    /* Header */
+
+    .header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .logo {
+        width: 55px;
+        height: 55px;
+    }
+
+    .title {
+        min-width: 0;
+    }
+
+    .title h2 {
+        font-size: 15px;
+        line-height: 1.15;
+        margin-bottom: 3px;
+    }
+
+    .title h3 {
+        font-size: 12px;
+        line-height: 1.15;
+        margin-bottom: 2px;
+    }
+
+    .photo-box {
+        width: 65px;
+    }
+
+    .photo {
+        width: 60px;
+        height: 75px;
+    }
+
+    /* Course */
+
+    .course {
+        width: 100%;
+        font-size: 14px;
+        margin: 8px 0;
+        white-space: normal;
+    }
+
+    .course input[name="Course"] {
+        width: auto;
+        max-width: 48%;
+        font-size: 14px;
+    }
+
+    .course input[name="Batch"] {
+        width: 70px;
+        font-size: 14px;
+    }
+
+    /* Student details */
+
+    .info {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .info td {
+        padding: 4px 3px;
+        font-size: 11px;
+    }
+
+    .info td:nth-child(odd) {
+        width: 23%;
+        white-space: nowrap;
+    }
+
+    .info td:nth-child(even) {
+        width: 27%;
+    }
+
+    .info input,
+    .info textarea {
+        width: 100%;
+        min-width: 0;
+        font-size: 11px;
+        padding: 2px;
+    }
+
+    /* Examination */
+
+    .exam-table-wrapper {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    .exam-table {
+        width: 850px;
+        min-width: 850px;
+        max-width: none;
+        table-layout: fixed;
     }
 
     .exam-table th,
     .exam-table td {
-        display: table-cell !important;
-        white-space: nowrap !important;
-        vertical-align: middle !important;
-        text-align: center !important;
-        font-size: 9px !important;
-        padding: 3px 2px !important;
-        height: 25px !important;
+        font-size: 9px;
+        padding: 3px 2px;
+        height: 25px;
+        white-space: nowrap;
     }
 
-    .exam-table th {
-        font-size: 9px !important;
+    .exam-table tr:first-child th {
+        font-size: 10px;
     }
 
     .exam-table td:first-child,
     .exam-table td:nth-child(6),
     .exam-table td:nth-child(11) {
-        text-align: left !important;
-        padding-left: 4px !important;
-        font-size: 8px !important;
+        font-size: 8px;
+        padding-left: 4px;
     }
 
     .exam-table input {
-        width: 100% !important;
-        min-width: 0 !important;
-        font-size: 9px !important;
-        text-align: center !important;
-        padding: 1px !important;
+        font-size: 9px;
+        padding: 1px;
     }
-
 
     /* Attendance */
-    .attendance {
-        width: 100% !important;
-        display: table !important;
-        table-layout: fixed !important;
+
+    .attendance-wrapper {
+        width: 100%;
+        overflow-x: auto;
     }
 
-    .attendance tr {
-        display: table-row !important;
+    .attendance {
+        width: 700px;
+        min-width: 700px;
     }
 
     .attendance th,
     .attendance td {
-        display: table-cell !important;
-        font-size: 10px !important;
-        padding: 4px !important;
+        font-size: 10px;
+        padding: 4px;
     }
-
 
     /* Signature */
-    .signature {
-        width: 100% !important;
-        display: table !important;
-    }
-
-    .signature tr {
-        display: table-row !important;
-    }
 
     .signature td {
-        display: table-cell !important;
-        font-size: 11px !important;
-        padding-top: 10px !important;
+        font-size: 11px;
+        padding-top: 10px;
     }
-
 
     /* Buttons */
-    .button-bar,
-    .no-print {
-        width: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 8px !important;
+
+    .button-bar {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+        margin: 20px 0;
     }
 
-    .button-bar button,
-    .no-print button {
-        width: 100% !important;
-        min-width: 0 !important;
-        height: 42px !important;
-        font-size: 14px !important;
+    .button-bar button {
+        width: 100%;
+        min-width: 0;
+        height: 42px;
+        font-size: 14px;
     }
 }
 
 
-/* ==========================================
+/* =========================================================
    SMALL MOBILE
-========================================== */
+========================================================= */
 
 @media screen and (max-width: 480px) {
 
     .container {
-        padding: 6px !important;
+        padding: 6px;
     }
 
     .logo {
-        width: 48px !important;
-        height: 48px !important;
+        width: 48px;
+        height: 48px;
     }
 
     .photo-box {
-        width: 58px !important;
+        width: 58px;
     }
 
     .photo {
-        width: 55px !important;
-        height: 68px !important;
+        width: 55px;
+        height: 68px;
     }
 
     .title h2 {
-        font-size: 13px !important;
+        font-size: 13px;
     }
 
     .title h3 {
-        font-size: 10px !important;
+        font-size: 10px;
     }
 
     .course {
-        font-size: 12px !important;
+        font-size: 12px;
+    }
+
+    .course input[name="Course"],
+    .course input[name="Batch"] {
+        font-size: 12px;
     }
 
     .info td {
-        font-size: 10px !important;
-        padding: 3px 2px !important;
+        font-size: 10px;
+        padding: 3px 2px;
     }
 
     .info input,
     .info textarea {
-        font-size: 10px !important;
+        font-size: 10px;
     }
 
-    /* Keep UG exam table scrollable */
     .exam-table {
-        width: 850px !important;
-        min-width: 850px !important;
+        width: 850px;
+        min-width: 850px;
     }
 
     .exam-table th,
     .exam-table td {
-        font-size: 8px !important;
-        padding: 2px !important;
+        font-size: 8px;
+        padding: 2px;
     }
 
     .exam-table input {
-        font-size: 8px !important;
+        font-size: 8px;
+    }
+}
+
+
+/* =========================================================
+   PRINT / A4
+========================================================= */
+
+@page {
+    size: A4 portrait;
+    margin: 4mm;
+}
+
+@media print {
+
+    html,
+    body {
+        width: 100%;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        color: #000;
+        font-family: "Times New Roman", serif;
+        font-size: 8pt;
+        line-height: 1.05;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .container {
+        width: 100%;
+        min-height: auto !important;
+        height: auto !important;
+        margin: 0;
+        padding: 2mm;
+        border: 0.25mm solid #000;
+        box-shadow: none;
+    }
+
+    /* Hide controls */
+
+    .no-print,
+    .button-bar,
+    button,
+    #photoInput,
+    #removePhotoBtn {
+        display: none !important;
+    }
+
+    /* Inputs become normal text */
+
+    input,
+    textarea,
+    select {
+        min-height: 0 !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        color: #000 !important;
+        font: inherit !important;
+        line-height: 1.05 !important;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
+    /* Header */
+
+    .header {
+        gap: 2mm;
+        align-items: center;
+    }
+
+    .logo {
+        width: 42px;
+        height: 42px;
+    }
+
+    .photo-box {
+        width: 48px;
+    }
+
+    .photo {
+        width: 48px;
+        height: 58px;
+        border-width: 0.25mm;
+    }
+
+    .title h2 {
+        font-size: 10pt;
+        line-height: 1.05;
+        margin: 0;
+    }
+
+    .title h3 {
+        font-size: 8pt;
+        line-height: 1.05;
+        margin: 0;
+    }
+
+    hr {
+        margin: 1mm 0;
+        border-width: 0.25mm 0 0;
+    }
+
+    /* Course */
+
+    .course {
+        margin: 1mm 0;
+        font-size: 8pt;
+        line-height: 1.05;
+    }
+
+    .course input {
+        font-size: 8pt !important;
+    }
+
+    .course input[name="Course"] {
+        width: auto;
+    }
+
+    .course input[name="Batch"] {
+        width: auto;
+    }
+
+    /* Student details */
+
+    .info {
+        width: 100%;
+        margin: 1mm 0 0;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    .info td {
+        padding: 0.45mm 0.65mm;
+        font-size: 7pt;
+        line-height: 1.05;
+    }
+
+    .info input,
+    .info textarea {
+        font-size: 7pt !important;
+        line-height: 1.05 !important;
+    }
+
+    .info textarea {
+        resize: none;
+    }
+
+    /* Section title */
+
+    .section-title {
+        margin: 1mm 0 0;
+        font-size: 8pt;
+        line-height: 1.05;
+    }
+
+    /* Exam table */
+
+    .exam-table-wrapper {
+        overflow: visible;
+        width: 100%;
+    }
+
+    .exam-table {
+        width: 100%;
+        min-width: 0;
+        margin: 1mm 0 0;
+        table-layout: fixed;
+        border-collapse: collapse;
+        page-break-inside: avoid;
+        break-inside: avoid-page;
+    }
+
+    .exam-table th,
+    .exam-table td {
+        padding: 0.35mm;
+        font-size: 6.4pt;
+        line-height: 1.02;
+        height: 3.3mm;
+    }
+
+    .exam-table th {
+        font-size: 6.8pt;
+        padding: 0.45mm 0.35mm;
+    }
+
+    .exam-table tr:first-child th {
+        font-size: 6.8pt;
+    }
+
+    .exam-table td:first-child,
+    .exam-table td:nth-child(6),
+    .exam-table td:nth-child(11) {
+        font-size: 6.2pt;
+        padding-left: 0.45mm;
+    }
+
+    .exam-table input {
+        font-size: 6.2pt !important;
+        line-height: 1 !important;
+    }
+
+    /* Attendance */
+
+    .attendance-wrapper {
+        width: 100%;
+        overflow: visible;
+    }
+
+    .attendance {
+        width: 100%;
+        min-width: 0;
+        margin: 1mm 0 0;
+        table-layout: fixed;
+    }
+
+    .attendance th,
+    .attendance td {
+        padding: 0.45mm;
+        font-size: 6.8pt;
+        line-height: 1.05;
+    }
+
+    .attendance input {
+        font-size: 6.8pt !important;
+    }
+
+    /* Signature */
+
+    .signature {
+        width: 100%;
+        margin-top: 2mm;
+    }
+
+    .signature td {
+        font-size: 7pt;
+        line-height: 1.05;
+    }
+
+    /* Prevent rows from splitting */
+
+    tr,
+    td,
+    th,
+    img {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    a {
+        color: #000;
+        text-decoration: none;
     }
 }
