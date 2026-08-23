@@ -1331,274 +1331,298 @@ button:disabled{
 
 }
 /* ==========================================
-   MOBILE RESPONSIVE FIX
-   Desktop + Print design unchanged
+   UG RESULT - MOBILE FIX
+   Add this at the VERY END of ug_style.css
 ========================================== */
 
 @media screen and (max-width: 768px) {
 
-    html,
-    body {
-        width: 100%;
-        max-width: 100%;
-        overflow-x: hidden;
-    }
-
-    body {
-        font-size: 14px;
-        background: #f2f2f2;
-    }
-
+    /* Main page */
     .container {
-        width: 100%;
-        min-height: auto;
-        margin: 0;
-        padding: 10px;
-        border: none;
-        box-shadow: none;
-        overflow: hidden;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 8px !important;
+        overflow-x: hidden !important;
     }
 
-    /* --------------------------
-       HEADER
-    -------------------------- */
-
+    /* Header */
     .header {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 6px !important;
     }
 
     .logo {
-        width: 60px;
-        height: 60px;
-        flex-shrink: 0;
+        width: 55px !important;
+        height: 55px !important;
+        flex-shrink: 0 !important;
     }
 
     .title {
-        min-width: 0;
-        flex: 1;
+        flex: 1 !important;
+        min-width: 0 !important;
+        text-align: center !important;
     }
 
     .title h2 {
-        font-size: 16px;
-        line-height: 1.15;
+        font-size: 15px !important;
+        line-height: 1.15 !important;
+        margin: 0 0 3px !important;
     }
 
     .title h3 {
-        font-size: 13px;
-        line-height: 1.15;
+        font-size: 12px !important;
+        line-height: 1.15 !important;
+        margin: 0 !important;
     }
 
     .photo-box {
-        width: 75px;
-        flex-shrink: 0;
+        width: 65px !important;
+        flex-shrink: 0 !important;
     }
 
     .photo {
-        width: 70px;
-        height: 85px;
+        width: 60px !important;
+        height: 75px !important;
     }
 
-    /* --------------------------
-       COURSE / BATCH
-    -------------------------- */
 
+    /* Course */
     .course {
-        font-size: 15px;
-        margin: 8px 0;
-        white-space: normal;
+        width: 100% !important;
+        font-size: 14px !important;
+        text-align: center !important;
+        white-space: normal !important;
+        margin: 8px 0 !important;
     }
 
     .course input[name="Course"] {
-        min-width: 0;
-        max-width: 55%;
-        width: auto;
+        width: auto !important;
+        max-width: 50% !important;
+        min-width: 0 !important;
+        display: inline !important;
     }
 
     .course input[name="Batch"] {
-        width: 75px;
+        width: 70px !important;
+        display: inline !important;
     }
 
-    /* --------------------------
-       STUDENT INFORMATION
-    -------------------------- */
 
+    /* Student information */
     .info {
-        width: 100%;
-        table-layout: fixed;
+        width: 100% !important;
+        display: table !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+    }
+
+    .info tr {
+        display: table-row !important;
     }
 
     .info td {
-        padding: 4px;
-        font-size: 12px;
-        overflow-wrap: anywhere;
+        display: table-cell !important;
+        width: auto !important;
+        padding: 4px 3px !important;
+        font-size: 11px !important;
+        vertical-align: middle !important;
     }
 
-    .info .label {
-        width: 22%;
+    .info td:nth-child(odd) {
+        width: 23% !important;
+        white-space: nowrap !important;
+    }
+
+    .info td:nth-child(even) {
+        width: 27% !important;
     }
 
     .info input,
     .info textarea {
-        max-width: 100%;
-        min-width: 0;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        font-size: 11px !important;
+        padding: 2px !important;
     }
 
-    /* --------------------------
-       EXAM TABLE
-    -------------------------- */
+
+    /* =====================================
+       IMPORTANT: UG EXAM TABLE
+    ===================================== */
 
     .exam-table-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        display: block !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
     .exam-table {
-        width: 100%;
-        min-width: 650px;
-        table-layout: fixed;
+        width: 850px !important;
+        min-width: 850px !important;
+        max-width: none !important;
+        table-layout: fixed !important;
+        display: table !important;
+        margin-top: 8px !important;
+    }
+
+    .exam-table tr {
+        display: table-row !important;
+    }
+
+    .exam-table th,
+    .exam-table td {
+        display: table-cell !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+        text-align: center !important;
+        font-size: 9px !important;
+        padding: 3px 2px !important;
+        height: 25px !important;
     }
 
     .exam-table th {
-        font-size: 10px;
-        padding: 4px 2px;
+        font-size: 9px !important;
     }
 
-    .exam-table td {
-        font-size: 9px;
-        padding: 3px 2px;
-        height: 26px;
+    .exam-table td:first-child,
+    .exam-table td:nth-child(6),
+    .exam-table td:nth-child(11) {
+        text-align: left !important;
+        padding-left: 4px !important;
+        font-size: 8px !important;
     }
 
     .exam-table input {
-        font-size: 9px;
-        min-width: 0;
+        width: 100% !important;
+        min-width: 0 !important;
+        font-size: 9px !important;
+        text-align: center !important;
+        padding: 1px !important;
     }
 
-    /* --------------------------
-       ATTENDANCE
-    -------------------------- */
 
+    /* Attendance */
     .attendance {
-        width: 100%;
-        table-layout: fixed;
+        width: 100% !important;
+        display: table !important;
+        table-layout: fixed !important;
+    }
+
+    .attendance tr {
+        display: table-row !important;
     }
 
     .attendance th,
     .attendance td {
-        font-size: 11px;
-        padding: 4px;
+        display: table-cell !important;
+        font-size: 10px !important;
+        padding: 4px !important;
     }
 
-    /* --------------------------
-       SIGNATURE
-    -------------------------- */
 
+    /* Signature */
     .signature {
-        width: 100%;
+        width: 100% !important;
+        display: table !important;
+    }
+
+    .signature tr {
+        display: table-row !important;
     }
 
     .signature td {
-        font-size: 12px;
+        display: table-cell !important;
+        font-size: 11px !important;
+        padding-top: 10px !important;
     }
 
-    .signature input {
-        width: 100%;
-        max-width: 160px;
-    }
 
-    /* --------------------------
-       BUTTONS
-    -------------------------- */
-
+    /* Buttons */
+    .button-bar,
     .no-print {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin: 20px 0;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
     }
 
+    .button-bar button,
     .no-print button {
-        width: 100%;
-        min-width: 0;
-        height: 44px;
-        font-size: 15px;
-    }
-
-    form.no-print {
-        width: 100%;
-    }
-
-    form.no-print button {
-        width: 100%;
-    }
-
-    /* --------------------------
-       MESSAGES
-    -------------------------- */
-
-    .message,
-    .error {
-        width: 100%;
-        font-size: 14px;
-        overflow-wrap: anywhere;
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 42px !important;
+        font-size: 14px !important;
     }
 }
 
 
 /* ==========================================
-   VERY SMALL PHONES
+   SMALL MOBILE
 ========================================== */
 
 @media screen and (max-width: 480px) {
 
     .container {
-        padding: 7px;
+        padding: 6px !important;
     }
 
     .logo {
-        width: 48px;
-        height: 48px;
+        width: 48px !important;
+        height: 48px !important;
     }
 
     .photo-box {
-        width: 65px;
+        width: 58px !important;
     }
 
     .photo {
-        width: 60px;
-        height: 75px;
+        width: 55px !important;
+        height: 68px !important;
     }
 
     .title h2 {
-        font-size: 14px;
+        font-size: 13px !important;
     }
 
     .title h3 {
-        font-size: 11px;
+        font-size: 10px !important;
     }
 
     .course {
-        font-size: 13px;
+        font-size: 12px !important;
     }
 
     .info td {
-        font-size: 11px;
-        padding: 3px;
+        font-size: 10px !important;
+        padding: 3px 2px !important;
     }
 
-    .info .label {
-        width: 25%;
+    .info input,
+    .info textarea {
+        font-size: 10px !important;
     }
 
-    .attendance th,
-    .attendance td {
-        font-size: 10px;
-        padding: 3px;
+    /* Keep UG exam table scrollable */
+    .exam-table {
+        width: 850px !important;
+        min-width: 850px !important;
+    }
+
+    .exam-table th,
+    .exam-table td {
+        font-size: 8px !important;
+        padding: 2px !important;
+    }
+
+    .exam-table input {
+        font-size: 8px !important;
     }
 }
