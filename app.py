@@ -1053,19 +1053,64 @@ def google_sheet_row(headers, values_row):
 
 
 def google_api_status():
-    """Safely test the configured Sheet and response worksheet for an admin."""
+    """Safely test Google Sheets and Drive connectivity for the admin page."""
 
-    values, response_range, _drive_service, _sheet_id = get_google_form_responses()
-    return {
-        "connection": "SUCCESS",
-        "spreadsheet": "Connected",
-        "worksheet": response_range,
-        "responses_found": max(len(values) - 1, 0),
-        # The Drive client uses the same validated service-account credentials.
-        # Individual file permissions are still reported per response on import.
-        "sheets": "Connected",
-        "drive": "Connected"
-    }
+    try:
+        sheets_service, drive_service, sheet_id = google_services()
+
+        # Test Spreadsheet access
+        spreadsheet = sheets_service.spreadsheets().get(
+            spreadsheetId=sheet_id,
+            fields="spreadsheetId,properties(title)"
+        ).execute()
+
+        spreadsheet_title = (
+            spreadsheet.get("properties", {}).get("title", "")
+        )
+
+        # Detect Form response worksheet
+        response_range = google_response_range(
+            sheets_service,
+            sheet_id
+        )
+
+        # Test response data access
+        values = sheets_service.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range=response_range
+        ).execute().get("values", [])
+
+        # Test Drive API itself
+        drive_service.files().list(
+            pageSize=1,
+            fields="files(id,name)"
+        ).execute()
+
+        return {
+            "connection": "SUCCESS",
+            "spreadsheet": "Connected",
+            "spreadsheet_title": spreadsheet_title,
+            "worksheet": response_range,
+            "responses_found": max(len(values) - 1, 0),
+            "sheets": "Connected",
+            "drive": "Connected"
+        }
+
+    except Exception as error:
+        app.logger.exception(
+            "Google API diagnostic failed: %s",
+            error
+        )
+
+        return {
+            "connection": "FAILED",
+            "spreadsheet": "Not connected",
+            "worksheet": "",
+            "responses_found": 0,
+            "sheets": "Not connected",
+            "drive": "Not connected",
+            "reason": google_safe_error_reason(error)
+        }
 
 
 def import_google_form_responses():
@@ -1723,41 +1768,38 @@ def get_backup_files():
 # CREATE EMPTY BATCH
 # ==========================================
 
-def create_empty_batch(course,batch):
+def create_empty_batch(course, batch):
 
     path = get_csv_path(
         course,
         batch
     )
 
+    # Always make sure the batch photo folder exists
+    os.makedirs(
+        get_photo_folder(course, batch),
+        exist_ok=True
+    )
 
     # Already batch exists
     if os.path.exists(path):
         return False
 
-
     columns = (
         UG_COLUMNS
-        if course=="UG"
+        if course == "UG"
         else PG_COLUMNS
     )
-
 
     df = pd.DataFrame(
         columns=columns
     )
-
 
     df.to_csv(
         path,
         index=False,
         encoding="utf-8-sig"
     )
-
-    # Keep each batch's local photo location ready for Form imports and manual
-    # uploads. exist_ok makes this safe if another request creates it first.
-    os.makedirs(get_photo_folder(course, batch), exist_ok=True)
-
 
     return True
 # ==========================================
