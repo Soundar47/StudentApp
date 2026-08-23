@@ -1330,3 +1330,275 @@ button:disabled{
     display:none !important;
 
 }
+/* ==========================================
+   MOBILE RESPONSIVE FIX
+   Desktop + Print design unchanged
+========================================== */
+
+@media screen and (max-width: 768px) {
+
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    body {
+        font-size: 14px;
+        background: #f2f2f2;
+    }
+
+    .container {
+        width: 100%;
+        min-height: auto;
+        margin: 0;
+        padding: 10px;
+        border: none;
+        box-shadow: none;
+        overflow: hidden;
+    }
+
+    /* --------------------------
+       HEADER
+    -------------------------- */
+
+    .header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .logo {
+        width: 60px;
+        height: 60px;
+        flex-shrink: 0;
+    }
+
+    .title {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .title h2 {
+        font-size: 16px;
+        line-height: 1.15;
+    }
+
+    .title h3 {
+        font-size: 13px;
+        line-height: 1.15;
+    }
+
+    .photo-box {
+        width: 75px;
+        flex-shrink: 0;
+    }
+
+    .photo {
+        width: 70px;
+        height: 85px;
+    }
+
+    /* --------------------------
+       COURSE / BATCH
+    -------------------------- */
+
+    .course {
+        font-size: 15px;
+        margin: 8px 0;
+        white-space: normal;
+    }
+
+    .course input[name="Course"] {
+        min-width: 0;
+        max-width: 55%;
+        width: auto;
+    }
+
+    .course input[name="Batch"] {
+        width: 75px;
+    }
+
+    /* --------------------------
+       STUDENT INFORMATION
+    -------------------------- */
+
+    .info {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .info td {
+        padding: 4px;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    .info .label {
+        width: 22%;
+    }
+
+    .info input,
+    .info textarea {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    /* --------------------------
+       EXAM TABLE
+    -------------------------- */
+
+    .exam-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .exam-table {
+        width: 100%;
+        min-width: 650px;
+        table-layout: fixed;
+    }
+
+    .exam-table th {
+        font-size: 10px;
+        padding: 4px 2px;
+    }
+
+    .exam-table td {
+        font-size: 9px;
+        padding: 3px 2px;
+        height: 26px;
+    }
+
+    .exam-table input {
+        font-size: 9px;
+        min-width: 0;
+    }
+
+    /* --------------------------
+       ATTENDANCE
+    -------------------------- */
+
+    .attendance {
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .attendance th,
+    .attendance td {
+        font-size: 11px;
+        padding: 4px;
+    }
+
+    /* --------------------------
+       SIGNATURE
+    -------------------------- */
+
+    .signature {
+        width: 100%;
+    }
+
+    .signature td {
+        font-size: 12px;
+    }
+
+    .signature input {
+        width: 100%;
+        max-width: 160px;
+    }
+
+    /* --------------------------
+       BUTTONS
+    -------------------------- */
+
+    .no-print {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .no-print button {
+        width: 100%;
+        min-width: 0;
+        height: 44px;
+        font-size: 15px;
+    }
+
+    form.no-print {
+        width: 100%;
+    }
+
+    form.no-print button {
+        width: 100%;
+    }
+
+    /* --------------------------
+       MESSAGES
+    -------------------------- */
+
+    .message,
+    .error {
+        width: 100%;
+        font-size: 14px;
+        overflow-wrap: anywhere;
+    }
+}
+
+
+/* ==========================================
+   VERY SMALL PHONES
+========================================== */
+
+@media screen and (max-width: 480px) {
+
+    .container {
+        padding: 7px;
+    }
+
+    .logo {
+        width: 48px;
+        height: 48px;
+    }
+
+    .photo-box {
+        width: 65px;
+    }
+
+    .photo {
+        width: 60px;
+        height: 75px;
+    }
+
+    .title h2 {
+        font-size: 14px;
+    }
+
+    .title h3 {
+        font-size: 11px;
+    }
+
+    .course {
+        font-size: 13px;
+    }
+
+    .info td {
+        font-size: 11px;
+        padding: 3px;
+    }
+
+    .info .label {
+        width: 25%;
+    }
+
+    .attendance th,
+    .attendance td {
+        font-size: 10px;
+        padding: 3px;
+    }
+}
