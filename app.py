@@ -9,7 +9,7 @@ from flask import (
     flash
 )
 
-from datetime import datetime
+from datetime import datetime, date
 
 import os
 import json
@@ -19,10 +19,13 @@ import shutil
 import tempfile
 import zipfile
 import stat
+import secrets
+import threading
 
 import pandas as pd
 
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 # ==========================================
 # FLASK APP
@@ -30,22 +33,34 @@ from functools import wraps
 
 app = Flask(__name__)
 
-app.secret_key = "student_management_system_2026"
+# Load a project-local .env before reading configuration.  This is optional;
+# deployment platforms should provide real environment variables instead.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+except ImportError:
+    pass
+
+# Never use a publicly known fallback key.  A random development fallback is
+# safe against forged cookies but intentionally invalidates sessions on restart;
+# production must set SECRET_KEY to retain sessions across restarts/workers.
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_urlsafe(48)
+if not os.environ.get("SECRET_KEY"):
+    app.logger.warning("SECRET_KEY is not configured; generated a temporary key. Set SECRET_KEY in production.")
+
+# SECURITY FIX: basic cookie hardening. SESSION_COOKIE_SECURE is left
+# controllable via an environment variable (default off) so local HTTP
+# development is not broken; set SESSION_COOKIE_SECURE=1 once the app is
+# served over HTTPS.
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_REQUEST_MB", "1024")) * 1024 * 1024
+app.config["MAX_FORM_MEMORY_SIZE"] = int(os.environ.get("MAX_FORM_MEMORY_MB", "1")) * 1024 * 1024
 
 # Always resolve local configuration relative to this file, not the directory
 # from which Flask/VS Code happened to start the process.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Loading this file is optional: production deployments can continue to provide
-# the same values as real environment variables. It makes the documented
-# project-local .env configuration work when the app is started directly.
-try:
-    from dotenv import load_dotenv
-    load_dotenv(os.path.join(BASE_DIR, ".env"))
-except ImportError:
-    pass
-
-
 
 # ==========================================
 # FOLDERS
@@ -70,6 +85,12 @@ PHOTO_FOLDER = os.path.join(
     "photos"
 )
 
+# DEPLOYMENT FIX: previously "uploads" (relative to the process's current
+# working directory). Anchoring it to BASE_DIR means uploads/backups land in
+# the same place regardless of which directory the app was launched from
+# (e.g. a WSGI server started with a different cwd).
+UPLOADS_FOLDER = os.path.join(BASE_DIR, "uploads")
+
 os.makedirs(
     UG_FOLDER,
     exist_ok=True
@@ -92,7 +113,9 @@ app.config["PHOTO_FOLDER"] = PHOTO_FOLDER
 # BACKUP FOLDER
 # ==========================================
 
-BACKUP_FOLDER = "backups"
+# DEPLOYMENT FIX: anchored to BASE_DIR for the same reason as UPLOADS_FOLDER
+# above (was the bare relative string "backups").
+BACKUP_FOLDER = os.path.join(BASE_DIR, "backups")
 
 os.makedirs(
     BACKUP_FOLDER,
@@ -163,6 +186,8 @@ def format_dob_for_csv(dob):
 ADMIN_FILE = os.path.join(BASE_DIR, "admin.json")
 
 LOG_FILE = os.path.join(BASE_DIR, "activity.log")
+LOG_MAX_BYTES = int(os.environ.get("ACTIVITY_LOG_MAX_MB", "10")) * 1024 * 1024
+LOG_ROTATION_COUNT = int(os.environ.get("ACTIVITY_LOG_ROTATIONS", "5"))
 
 # This is deliberately separate from the student CSVs. It is an audit ledger of
 # successfully seen Form response rows; RegNo remains the duplicate protection
@@ -422,6 +447,19 @@ GOOGLE_FORM_FIELDS = [
 GOOGLE_FORM_REQUIRED_FIELDS = {"RegNo", "Name", "Course", "Batch"}
 ALLOWED_BLOOD_GROUPS = {"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"}
 
+# Cap on how many per-response records are kept in the (client-side, cookie
+# based) Flask session after a Google Form import. Without this cap a large
+# import's full "records" list can exceed the browser's ~4KB cookie limit and
+# silently fail to round-trip. The aggregate counts (new/updated/skipped/
+# failed) are never trimmed, only the detailed per-row list.
+GOOGLE_IMPORT_SESSION_RECORD_LIMIT = 300
+GOOGLE_IMPORT_SESSION_DETAIL_LIMIT = 20
+MAX_PHOTO_BYTES = int(os.environ.get("MAX_PHOTO_MB", "10")) * 1024 * 1024
+MAX_PHOTO_PIXELS = int(os.environ.get("MAX_PHOTO_PIXELS", "25000000"))
+MAX_BACKUP_BYTES = int(os.environ.get("MAX_BACKUP_MB", "1024")) * 1024 * 1024
+MAX_BACKUP_MEMBERS = int(os.environ.get("MAX_BACKUP_MEMBERS", "20000"))
+MAX_BACKUP_EXPANDED_BYTES = int(os.environ.get("MAX_BACKUP_EXPANDED_MB", "4096")) * 1024 * 1024
+
 
 # ==========================================
 # LOGIN REQUIRED DECORATOR
@@ -449,6 +487,81 @@ def login_required(view_func):
     return wrapped
 
 
+# Flask's built-in session is signed but cookies are still sent automatically
+# by browsers.  Require an unpredictable per-session token on every state
+# changing request so another site cannot trigger an authenticated action.
+def csrf_token():
+    token = session.get("_csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["_csrf_token"] = token
+    return token
+
+
+@app.context_processor
+def inject_security_helpers():
+    return {"csrf_token": csrf_token}
+
+
+@app.before_request
+def protect_from_csrf():
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+        submitted = request.form.get("_csrf_token", "") or request.headers.get("X-CSRF-Token", "")
+        expected = session.get("_csrf_token", "")
+        if not expected or not submitted or not secrets.compare_digest(expected, submitted):
+            app.logger.warning("CSRF validation failed for %s", request.path)
+            return "Invalid or missing CSRF token.", 400
+
+
+# ==========================================
+# BASIC LOGIN LOCKOUT (BRUTE-FORCE MITIGATION)
+# ==========================================
+#
+# SECURITY FIX: the original app had no protection against repeated login
+# guesses. This is a lightweight, dependency-free mitigation: after
+# LOGIN_MAX_ATTEMPTS failures from the same client address within
+# LOGIN_LOCKOUT_SECONDS, further attempts are blocked until the window
+# expires.
+#
+# Limitation (documented, not silently hidden): this state is in-process
+# memory. It resets on restart and is NOT shared across multiple worker
+# processes (e.g. multiple Gunicorn workers). For real production use behind
+# multiple workers, replace this with Flask-Limiter backed by Redis or a
+# similar shared store.
+
+_failed_logins = {}
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_LOCKOUT_SECONDS = 300
+
+
+def _login_identifier():
+    return request.remote_addr or "unknown"
+
+
+def is_login_locked_out(identifier):
+    entry = _failed_logins.get(identifier)
+    if not entry:
+        return False
+    count, first_attempt = entry
+    if count < LOGIN_MAX_ATTEMPTS:
+        return False
+    if (datetime.now() - first_attempt).total_seconds() > LOGIN_LOCKOUT_SECONDS:
+        _failed_logins.pop(identifier, None)
+        return False
+    return True
+
+
+def register_failed_login(identifier):
+    count, first_attempt = _failed_logins.get(identifier, (0, datetime.now()))
+    if (datetime.now() - first_attempt).total_seconds() > LOGIN_LOCKOUT_SECONDS:
+        count, first_attempt = 0, datetime.now()
+    _failed_logins[identifier] = (count + 1, first_attempt)
+
+
+def clear_failed_login(identifier):
+    _failed_logins.pop(identifier, None)
+
+
 # ==========================================
 # ADMIN FUNCTIONS
 # ==========================================
@@ -459,11 +572,15 @@ def load_admin():
 
     if not os.path.exists(ADMIN_FILE):
 
+        # SECURITY FIX: the default admin password is now stored hashed
+        # rather than as plain text. The default credential itself is
+        # unchanged (username "admin", password "admin12") so existing
+        # documentation/first-login flow still works.
         data = {
 
             "username":"admin",
 
-            "password":"admin12"
+            "password": generate_password_hash("admin12")
 
         }
 
@@ -494,23 +611,43 @@ def load_admin():
         return json.load(file)
 
 
+def verify_admin_password(admin, password):
+    """
+    Verify a login attempt against the stored admin record.
 
+    SECURITY FIX / migration path: newly created or already-migrated
+    admin.json files store a werkzeug password hash (recognizable by the
+    "pbkdf2:" or "scrypt:" prefix). Older admin.json files created by a
+    previous version of this app may still contain the raw plaintext
+    password - those are still accepted here so existing installs are not
+    locked out, and are transparently upgraded to a hash on next successful
+    login (see admin_login()).
+    """
+
+    stored_password = admin.get("password", "")
+
+    if stored_password.startswith(("pbkdf2:", "scrypt:")):
+        try:
+            return check_password_hash(stored_password, password)
+        except ValueError:
+            app.logger.warning("Admin password hash is invalid")
+            return False
+
+    # Legacy plaintext password from an older install.
+    return stored_password == password
 
 
 def save_admin(data):
-
-
-    with open(
-        ADMIN_FILE,
-        "w"
-    ) as file:
-
-
-        json.dump(
-            data,
-            file,
-            indent=4
-        )
+    temporary_path = ADMIN_FILE + ".tmp"
+    try:
+        with open(temporary_path, "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=4)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary_path, ADMIN_FILE)
+    finally:
+        if os.path.exists(temporary_path):
+            os.remove(temporary_path)
 
 
 
@@ -522,8 +659,20 @@ def save_admin(data):
 
 
 def write_log(message):
-
-
+    # Keep the audit trail bounded on long-running deployments while retaining
+    # several historical files.  Backups include these rotated files too.
+    try:
+        if os.path.isfile(LOG_FILE) and os.path.getsize(LOG_FILE) >= LOG_MAX_BYTES:
+            oldest = f"{LOG_FILE}.{LOG_ROTATION_COUNT}"
+            if os.path.exists(oldest):
+                os.remove(oldest)
+            for index in range(LOG_ROTATION_COUNT - 1, 0, -1):
+                source, destination = f"{LOG_FILE}.{index}", f"{LOG_FILE}.{index + 1}"
+                if os.path.exists(source):
+                    os.replace(source, destination)
+            os.replace(LOG_FILE, f"{LOG_FILE}.1")
+    except OSError:
+        app.logger.exception("Activity log rotation failed")
     with open(
         LOG_FILE,
         "a",
@@ -556,6 +705,24 @@ def write_log(message):
 
 
 
+def read_recent_log_lines(limit=500):
+    """Read the newest log entries without loading an unbounded file into RAM."""
+
+    if not os.path.isfile(LOG_FILE):
+        return []
+    with open(LOG_FILE, "rb") as file:
+        file.seek(0, os.SEEK_END)
+        position = file.tell()
+        data = b""
+        while position > 0 and data.count(b"\n") <= limit:
+            size = min(8192, position)
+            position -= size
+            file.seek(position)
+            data = file.read(size) + data
+    return [line.decode("utf-8", "replace").rstrip("\r")
+            for line in data.splitlines()[-limit:]]
+
+
 # ==========================================
 # CSV PATH
 # ==========================================
@@ -570,6 +737,9 @@ def get_csv_path(course, batch):
     """Return the CSV path for an exact course/batch combination."""
     course = normalize_course(course)
     batch = normalize_batch(batch)
+
+    if not re.fullmatch(r"\d{4}_\d{4}", batch):
+        raise ValueError("Invalid batch")
 
     if course == "UG":
         return os.path.join(UG_FOLDER, f"{batch}.csv")
@@ -590,28 +760,26 @@ def get_csv_path(course, batch):
 
 def load_csv(course,batch):
 
-
-    path = get_csv_path(
-        course,
-        batch
-    )
-
-
-
-    if not os.path.exists(path):
-
-        return None
-
-
-
+    # BUG FIX: get_csv_path() can raise ValueError for an invalid course
+    # (e.g. a bad/missing "course" query-string value). Previously that call
+    # sat outside this function's try/except, so an invalid course produced
+    # an unhandled 500 instead of the same "not found" behavior every other
+    # bad-CSV case gets. Wrapping the whole thing makes this function
+    # consistently return None for any reason the CSV can't be loaded.
     try:
 
-        df = pd.read_csv(
-            path,
-            dtype=str,
-            engine="python",
-            on_bad_lines="skip"
+        path = get_csv_path(
+            course,
+            batch
         )
+
+        if not os.path.exists(path):
+
+            return None
+
+        # Do not silently skip malformed rows: accepting a damaged CSV and
+        # later saving it would permanently discard the skipped students.
+        df = pd.read_csv(path, dtype=str, engine="python")
 
         return df.fillna("")
 
@@ -641,11 +809,11 @@ def save_csv(df,course,batch):
 
     temporary_path = path + ".tmp"
     try:
-        df.to_csv(
-            temporary_path,
-            index=False,
-            encoding="utf-8-sig"
-        )
+        df.to_csv(temporary_path, index=False, encoding="utf-8-sig")
+        # Flush the replacement file before publishing it.  os.replace keeps
+        # the previous CSV intact if writing or flushing fails.
+        with open(temporary_path, "rb") as temporary_file:
+            os.fsync(temporary_file.fileno())
         os.replace(temporary_path, path)
     finally:
         if os.path.exists(temporary_path):
@@ -860,8 +1028,22 @@ def save_uploaded_photo(photo, course, batch, regno):
         ) as temporary:
             temporary_path = temporary.name
         photo.save(temporary_path)
-        if os.path.getsize(temporary_path) == 0:
+        photo_size = os.path.getsize(temporary_path)
+        if photo_size == 0:
             raise ValueError("The selected photo is empty.")
+        if photo_size > MAX_PHOTO_BYTES:
+            raise ValueError("The selected photo is too large.")
+        from PIL import Image, UnidentifiedImageError
+        try:
+            with Image.open(temporary_path) as image:
+                image.verify()
+            with Image.open(temporary_path) as image:
+                if image.format not in {"JPEG", "PNG"}:
+                    raise ValueError("Photo must be a JPG, JPEG, or PNG image.")
+                if image.width * image.height > MAX_PHOTO_PIXELS:
+                    raise ValueError("The selected photo has too many pixels.")
+        except (OSError, UnidentifiedImageError) as error:
+            raise ValueError("The selected photo is not a valid image.") from error
         os.replace(temporary_path, photo_path)
         return filename
     except (OSError, ValueError) as error:
@@ -1037,6 +1219,8 @@ def download_google_photo(drive_service, photo_value, course, batch, regno):
             with Image.open(temporary_path) as image:
                 image.verify()
             with Image.open(temporary_path) as image:
+                if image.width * image.height > MAX_PHOTO_PIXELS:
+                    raise ValueError("Downloaded photo has too many pixels")
                 if image.mode in {"RGBA", "LA"}:
                     background = Image.new("RGB", image.size, "white")
                     background.paste(image, mask=image.getchannel("A"))
@@ -1046,7 +1230,7 @@ def download_google_photo(drive_service, photo_value, course, batch, regno):
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as converted:
                     converted_path = converted.name
                 image.save(converted_path, "JPEG")
-        except (OSError, UnidentifiedImageError) as error:
+        except (OSError, UnidentifiedImageError, ValueError) as error:
             raise ValueError("Downloaded photo is not a valid image") from error
 
         os.replace(converted_path, destination)
@@ -1164,6 +1348,13 @@ def import_google_form_responses():
         import_id = response_row_id(sheet_row_number, headers, values_row)
         row = google_sheet_row(headers, values_row)
         row = {field: str(row.get(field, "")).strip() for field in GOOGLE_FORM_FIELDS}
+        if import_id in imported_ids:
+            # A successful, unchanged response has already been merged.  A
+            # changed response has a different content hash and is therefore
+            # still processed as an update.
+            result["skipped"] += 1
+            add_import_record(result, row, "SKIPPED", "Previously imported")
+            continue
         validation_error = validate_google_form_row(row)
         regno = row.get("RegNo", "") or "(blank)"
         if validation_error:
@@ -1276,13 +1467,37 @@ def import_google_form_responses():
 
     save_google_import_log(imported_ids)
     return result
+
+
+def trim_import_result_for_session(result):
+    """
+    Cap the per-response 'records' list before storing an import result in
+    the session.
+
+    DATA-SAFETY FIX: Flask's default session is a signed, client-side
+    cookie with a small (~4KB) size limit. A large Google Form import can
+    produce a 'records' entry per response row, which can silently exceed
+    that limit. The aggregate counters (new/updated/skipped/failed/photos)
+    are always kept intact; only the detailed list is capped, with a note
+    added so the admin knows some rows were left out of the detail view
+    (they are still fully present in activity.log).
+    """
+
+    result = dict(result)
+    for key in ("records", "errors", "photo_warnings"):
+        values = result.get(key)
+        if isinstance(values, list) and len(values) > GOOGLE_IMPORT_SESSION_DETAIL_LIMIT:
+            result[key] = values[:GOOGLE_IMPORT_SESSION_DETAIL_LIMIT]
+            result[f"{key}_truncated"] = len(values) - GOOGLE_IMPORT_SESSION_DETAIL_LIMIT
+    return result
 # ==========================================
 # BACKUP & RESTORE SYSTEM
 # ==========================================
 
 BACKUP_ALLOWED_FILES = {
     "admin.json",
-    "activity.log"
+    "activity.log",
+    "google_import_log.json"
 }
 
 
@@ -1291,9 +1506,7 @@ def get_backup_filename():
     Generate a unique backup filename.
     """
 
-    timestamp = datetime.now().strftime(
-        "%Y-%m-%d_%H-%M-%S"
-    )
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S_%f")
 
     return f"StudentApp_Backup_{timestamp}.zip"
 
@@ -1307,15 +1520,13 @@ def is_safe_zip_member(member_name):
         ../../../something
     """
 
-    normalized = os.path.normpath(member_name)
-
-    if normalized.startswith(".."):
+    if not member_name or "\x00" in member_name:
         return False
-
-    if os.path.isabs(normalized):
+    normalized = member_name.replace("\\", "/")
+    if normalized.startswith("/") or re.match(r"^[A-Za-z]:", normalized):
         return False
-
-    return True
+    parts = [part for part in normalized.split("/") if part not in {"", "."}]
+    return ".." not in parts
 
 
 def is_allowed_backup_member(member_name):
@@ -1333,6 +1544,8 @@ def is_allowed_backup_member(member_name):
     )
 
     if normalized in BACKUP_ALLOWED_FILES:
+        return True
+    if re.fullmatch(r"activity\.log\.\d+", normalized):
         return True
 
     for prefix in allowed_prefixes:
@@ -1356,12 +1569,21 @@ def validate_backup_zip(zip_path):
 
             if not members:
                 return False, "Backup ZIP is empty."
+            if len(members) > MAX_BACKUP_MEMBERS:
+                return False, "Backup contains too many files."
 
             valid_file_found = False
+            names = set()
+            total_uncompressed = 0
 
             for member in members:
 
                 name = member.filename
+
+                normalized_name = name.replace("\\", "/").rstrip("/")
+                if normalized_name in names:
+                    return False, "Backup contains duplicate file paths."
+                names.add(normalized_name)
 
                 # Path traversal protection
                 if not is_safe_zip_member(name):
@@ -1377,6 +1599,17 @@ def validate_backup_zip(zip_path):
                 if name.endswith("/"):
                     continue
 
+                total_uncompressed += member.file_size
+                if total_uncompressed > MAX_BACKUP_EXPANDED_BYTES:
+                    return False, "Backup expands beyond the configured safe limit."
+
+                # A very high ratio is characteristic of ZIP bombs.  Small
+                # text files are exempt because their normal compression ratio
+                # can be high without posing a disk-exhaustion risk.
+                if member.file_size > 1024 * 1024 and member.compress_size and \
+                        member.file_size / member.compress_size > 100:
+                    return False, "Backup has an unsafe compression ratio."
+
                 if not is_allowed_backup_member(name):
                     return False, f"Invalid backup file: {name}"
 
@@ -1390,8 +1623,31 @@ def validate_backup_zip(zip_path):
     except zipfile.BadZipFile:
         return False, "The uploaded file is not a valid ZIP backup."
 
-    except Exception as e:
-        return False, str(e)
+    except Exception:
+        app.logger.exception("Backup ZIP validation failed")
+        return False, "Backup ZIP could not be validated."
+
+
+def save_limited_upload(upload, destination, byte_limit):
+    """Stream an upload to disk without allowing an unbounded temporary file."""
+
+    written = 0
+    try:
+        with open(destination, "xb") as output:
+            while True:
+                chunk = upload.stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                written += len(chunk)
+                if written > byte_limit:
+                    raise ValueError("The uploaded backup exceeds the configured size limit.")
+                output.write(chunk)
+            output.flush()
+            os.fsync(output.fileno())
+    except Exception:
+        if os.path.exists(destination):
+            os.remove(destination)
+        raise
 
 
 def create_backup(reason="Manual Backup"):
@@ -1403,124 +1659,94 @@ def create_backup(reason="Manual Backup"):
     """
 
     filename = get_backup_filename()
+    backup_path = os.path.join(BACKUP_FOLDER, filename)
+    temporary_backup_path = backup_path + ".tmp"
 
-    backup_path = os.path.join(
-        BACKUP_FOLDER,
-        filename
-    )
+    def add_tree(archive, folder):
+        if not os.path.isdir(folder):
+            return
+        for root, dirs, files in os.walk(folder, followlinks=False):
+            dirs[:] = [name for name in dirs if not os.path.islink(os.path.join(root, name))]
+            for file_name in files:
+                full_path = os.path.join(root, file_name)
+                if os.path.islink(full_path):
+                    app.logger.warning("Skipped symlink in backup: %s", full_path)
+                    continue
+                archive.write(full_path, os.path.relpath(full_path, BASE_DIR))
 
-    with zipfile.ZipFile(
-        backup_path,
-        "w",
-        compression=zipfile.ZIP_DEFLATED
-    ) as archive:
-
-        # -----------------------------
-        # DATA
-        # -----------------------------
-
-        if os.path.exists(DATA_FOLDER):
-
-            for root, dirs, files in os.walk(DATA_FOLDER):
-
-                for file in files:
-
-                    full_path = os.path.join(
-                        root,
-                        file
-                    )
-
-                    archive_name = os.path.relpath(
-                        full_path,
-                        "."
-                    )
-
-                    archive.write(
-                        full_path,
-                        archive_name
-                    )
-
-        # -----------------------------
-        # PHOTOS
-        # -----------------------------
-
-        if os.path.exists(PHOTO_FOLDER):
-
-            for root, dirs, files in os.walk(PHOTO_FOLDER):
-
-                for file in files:
-
-                    full_path = os.path.join(
-                        root,
-                        file
-                    )
-
-                    archive_name = os.path.relpath(
-                        full_path,
-                        "."
-                    )
-
-                    archive.write(
-                        full_path,
-                        archive_name
-                    )
-
-        # -----------------------------
-        # UPLOADS
-        # -----------------------------
-
-        uploads_folder = "uploads"
-
-        if os.path.exists(uploads_folder):
-
-            for root, dirs, files in os.walk(
-                uploads_folder
-            ):
-
-                for file in files:
-
-                    full_path = os.path.join(
-                        root,
-                        file
-                    )
-
-                    archive_name = os.path.relpath(
-                        full_path,
-                        "."
-                    )
-
-                    archive.write(
-                        full_path,
-                        archive_name
-                    )
-
-        # -----------------------------
-        # ADMIN FILE
-        # -----------------------------
-
-        if os.path.exists(ADMIN_FILE):
-
-            archive.write(
-                ADMIN_FILE,
-                ADMIN_FILE
-            )
-
-        # -----------------------------
-        # ACTIVITY LOG
-        # -----------------------------
-
-        if os.path.exists(LOG_FILE):
-
-            archive.write(
-                LOG_FILE,
-                LOG_FILE
-            )
+    try:
+        with zipfile.ZipFile(temporary_backup_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            add_tree(archive, DATA_FOLDER)
+            add_tree(archive, PHOTO_FOLDER)
+            add_tree(archive, UPLOADS_FOLDER)
+            files_to_add = [ADMIN_FILE, LOG_FILE, GOOGLE_IMPORT_LOG_FILE]
+            files_to_add.extend(f"{LOG_FILE}.{index}" for index in range(1, LOG_ROTATION_COUNT + 1))
+            for file_path in files_to_add:
+                if os.path.isfile(file_path) and not os.path.islink(file_path):
+                    archive.write(file_path, os.path.basename(file_path))
+        os.replace(temporary_backup_path, backup_path)
+    finally:
+        if os.path.exists(temporary_backup_path):
+            os.remove(temporary_backup_path)
 
     write_log(
         f"Backup Created | {reason} | {filename}"
     )
 
     return backup_path
+
+
+def atomic_replace_dir(source_dir, target_dir):
+    """
+    Replace target_dir's contents with source_dir's, without ever leaving
+    the application with neither the old nor the new data.
+
+    DATA-SAFETY FIX: the previous restore implementation did
+    shutil.rmtree(target_dir) followed by shutil.copytree(source_dir,
+    target_dir). If the copy failed partway (disk full, permissions,
+    truncated archive), the original directory was already gone and the
+    new one was incomplete - a genuine, irreversible data-loss window
+    (a safety backup is taken earlier, but the live app would still be
+    broken until someone noticed and manually restored it).
+
+    This copies the new directory to a staging location FIRST (so a failed
+    copy never touches the live directory at all), then swaps it in with
+    os.rename (a near-atomic operation on the same filesystem), keeping the
+    previous directory until the swap has fully succeeded.
+    """
+
+    staging_dir = target_dir + ".restore_tmp"
+    old_dir = target_dir + ".restore_old"
+
+    # Never blindly delete a previous restore's ``.restore_old`` directory:
+    # after a crash it may be the only complete copy of live data.  Recover it
+    # when the target is absent; otherwise require operator review instead of
+    # guessing which copy is authoritative.
+    if os.path.exists(old_dir):
+        if not os.path.exists(target_dir):
+            os.rename(old_dir, target_dir)
+        else:
+            raise OSError(f"Previous restore cleanup is pending for {target_dir}")
+    if os.path.exists(staging_dir):
+        shutil.rmtree(staging_dir, ignore_errors=True)
+
+    # If this raises, target_dir has not been touched at all.
+    shutil.copytree(source_dir, staging_dir)
+
+    try:
+        if os.path.exists(target_dir):
+            os.rename(target_dir, old_dir)
+        os.rename(staging_dir, target_dir)
+    except Exception:
+        # Roll back: restore the previous directory if the swap failed
+        # partway, so the live app is never left without a data folder.
+        if os.path.exists(old_dir) and not os.path.exists(target_dir):
+            os.rename(old_dir, target_dir)
+        raise
+    finally:
+        shutil.rmtree(staging_dir, ignore_errors=True)
+
+    shutil.rmtree(old_dir, ignore_errors=True)
 
 
 def restore_backup(zip_path):
@@ -1586,13 +1812,9 @@ def restore_backup(zip_path):
 
         if os.path.exists(extracted_data):
 
-            if os.path.exists(DATA_FOLDER):
-                shutil.rmtree(DATA_FOLDER)
-
-            shutil.copytree(
-                extracted_data,
-                DATA_FOLDER
-            )
+            # DATA-SAFETY FIX: staged atomic swap instead of
+            # rmtree-then-copytree (see atomic_replace_dir() docstring).
+            atomic_replace_dir(extracted_data, DATA_FOLDER)
 
         # --------------------------------------
         # RESTORE PHOTOS
@@ -1606,19 +1828,7 @@ def restore_backup(zip_path):
 
         if os.path.exists(extracted_photos):
 
-            if os.path.exists(PHOTO_FOLDER):
-                shutil.rmtree(PHOTO_FOLDER)
-
-            os.makedirs(
-                PHOTO_FOLDER,
-                exist_ok=True
-            )
-
-            shutil.copytree(
-                extracted_photos,
-                PHOTO_FOLDER,
-                dirs_exist_ok=True
-            )
+            atomic_replace_dir(extracted_photos, PHOTO_FOLDER)
 
         # --------------------------------------
         # RESTORE UPLOADS
@@ -1631,23 +1841,20 @@ def restore_backup(zip_path):
 
         if os.path.exists(extracted_uploads):
 
-            uploads_folder = "uploads"
-
-            if os.path.exists(uploads_folder):
-                shutil.rmtree(uploads_folder)
-
-            shutil.copytree(
-                extracted_uploads,
-                uploads_folder
-            )
+            atomic_replace_dir(extracted_uploads, UPLOADS_FOLDER)
 
         # --------------------------------------
         # RESTORE ADMIN
         # --------------------------------------
 
+        # BUG FIX (critical): previously os.path.join(temp_folder, ADMIN_FILE)
+        # - since ADMIN_FILE is an absolute path, os.path.join() ignores
+        # temp_folder entirely and this always pointed at the LIVE admin.json,
+        # not the extracted one, making the admin.json restore a no-op (and,
+        # combined with the arcname bug above, it could never have worked).
         extracted_admin = os.path.join(
             temp_folder,
-            ADMIN_FILE
+            os.path.basename(ADMIN_FILE)
         )
 
         if os.path.exists(extracted_admin):
@@ -1661,9 +1868,10 @@ def restore_backup(zip_path):
         # RESTORE ACTIVITY LOG
         # --------------------------------------
 
+        # BUG FIX (critical): same issue as ADMIN_FILE above.
         extracted_log = os.path.join(
             temp_folder,
-            LOG_FILE
+            os.path.basename(LOG_FILE)
         )
 
         if os.path.exists(extracted_log):
@@ -1672,6 +1880,18 @@ def restore_backup(zip_path):
                 extracted_log,
                 LOG_FILE
             )
+
+        for index in range(1, LOG_ROTATION_COUNT + 1):
+            live_rotated_log = f"{LOG_FILE}.{index}"
+            extracted_rotated_log = os.path.join(temp_folder, f"activity.log.{index}")
+            if os.path.exists(extracted_rotated_log):
+                shutil.copy2(extracted_rotated_log, live_rotated_log)
+            elif os.path.exists(live_rotated_log):
+                os.remove(live_rotated_log)
+
+        extracted_google_log = os.path.join(temp_folder, os.path.basename(GOOGLE_IMPORT_LOG_FILE))
+        if os.path.exists(extracted_google_log):
+            shutil.copy2(extracted_google_log, GOOGLE_IMPORT_LOG_FILE)
 
         write_log(
             "Backup Restored Successfully"
@@ -1849,10 +2069,19 @@ def admin_login():
     if request.method=="POST":
 
 
-        username=request.form["username"]
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
-        password=request.form["password"]
+        identifier = _login_identifier()
 
+        # SECURITY FIX: basic brute-force lockout (see is_login_locked_out()
+        # docstring for the documented limitations of this in-memory
+        # implementation).
+        if is_login_locked_out(identifier):
+            return render_template(
+                "admin_login.html",
+                error="Too many failed attempts. Please try again in a few minutes."
+            )
 
         admin=load_admin()
 
@@ -1861,8 +2090,18 @@ def admin_login():
         if (
             username==admin["username"]
             and
-            password==admin["password"]
+            verify_admin_password(admin, password)
         ):
+            clear_failed_login(identifier)
+
+            # SECURITY FIX: transparently upgrade a legacy plaintext password
+            # to a hash on first successful login after this update, without
+            # requiring the admin to do anything or changing their password.
+            if not admin["password"].startswith(("pbkdf2:", "scrypt:")):
+                admin["password"] = generate_password_hash(password)
+                save_admin(admin)
+
+            session.clear()
             session["admin"]=True
             session["last_login"] = datetime.now().strftime("%d-%m-%Y %I:%M:%S %p")
 
@@ -1876,6 +2115,7 @@ def admin_login():
             )
 
 
+        register_failed_login(identifier)
 
         return render_template(
             "admin_login.html",
@@ -1892,7 +2132,8 @@ def admin_login():
 # ==========================================
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
+@login_required
 def logout():
 
     write_log(
@@ -2065,20 +2306,7 @@ def admin():
 
     recent_logs = []
 
-    if os.path.exists(LOG_FILE):
-
-        with open(
-            LOG_FILE,
-            "r",
-            encoding="utf-8"
-        ) as file:
-
-            recent_logs = [
-                line.strip()
-                for line in file.readlines()[-5:]
-            ]
-
-        recent_logs.reverse()
+    recent_logs = list(reversed(read_recent_log_lines(5)))
 
     # -------------------------------
     # IMPORTANT: RETURN TEMPLATE
@@ -2129,7 +2357,7 @@ def import_google_responses_route():
     write_log("Google Form import started")
     try:
         result = import_google_form_responses()
-        session["import_result"] = result
+        session["import_result"] = trim_import_result_for_session(result)
         write_log(
             "Google Form import completed | "
             f"New: {result['new']} | Updated: {result['updated']} | "
@@ -2262,9 +2490,7 @@ def upload_backup():
         )
 
     # Add upload timestamp to prevent accidental overwrite
-    timestamp = datetime.now().strftime(
-        "%Y%m%d_%H%M%S"
-    )
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
     filename = (
         f"Uploaded_{timestamp}_{filename}"
@@ -2277,7 +2503,7 @@ def upload_backup():
 
     try:
 
-        file.save(path)
+        save_limited_upload(file, path, MAX_BACKUP_BYTES)
 
         valid, message = validate_backup_zip(
             path
@@ -2463,108 +2689,17 @@ def delete_backup():
     return redirect(
         url_for("backup_restore")
     )
-# -------------------------------
-# PG Batches & Students
-# -------------------------------
-
-    for file in os.listdir(PG_FOLDER):
-
-        if file.endswith(".csv"):
-
-            batch = file.replace(".csv", "")
-            pg_batches.append(batch)
-
-            df = load_csv("PG", batch)
-
-            if df is not None:
-                total_pg_students += len(df)
-
-    # -------------------------------
-    # Dashboard Statistics
-    # -------------------------------
-
-    total_students = total_ug_students + total_pg_students
-
-    total_ug_batches = len(ug_batches)
-    total_pg_batches = len(pg_batches)
-
-    total_batches = total_ug_batches + total_pg_batches
-
-    # -------------------------------
-    # Latest Uploaded Batch
-    # -------------------------------
-
-    latest_batch = "-"
-
-    all_batches = []
-
-    for batch in ug_batches:
-        all_batches.append(("UG", batch))
-
-    for batch in pg_batches:
-        all_batches.append(("PG", batch))
-
-    if all_batches:
-
-        latest_course, latest = sorted(all_batches, key=lambda x: x[1])[-1]
-
-        latest_batch = f"{latest_course} - {latest}"
-
-    # -------------------------------
-    # Last Login
-    # -------------------------------
-
-    last_login = session.get("last_login", "-")
-
-    # -------------------------------
-    # Recent Activities
-    # -------------------------------
-
-    recent_logs = []
-
-    if os.path.exists("activity.log"):
-
-        with open("activity.log", "r", encoding="utf-8") as file:
-
-            recent_logs = [
-                line.strip()
-                for line in file.readlines()[-5:]
-            ]
-
-        recent_logs.reverse()
-
-    # -------------------------------
-    # Render
-    # -------------------------------
-
-    return render_template(
-
-        "admin.html",
-
-        ug_batches=sorted(ug_batches),
-        pg_batches=sorted(pg_batches),
-
-        total_students=total_students,
-
-        total_ug_students=total_ug_students,
-        total_pg_students=total_pg_students,
-
-        total_ug_batches=total_ug_batches,
-        total_pg_batches=total_pg_batches,
-
-        total_batches=total_batches,
-
-        latest_batch=latest_batch,
-
-        last_login=last_login,
-
-        recent_logs=recent_logs
-
-    )
-
 # ==========================================
 # UPLOAD DATA
 # ==========================================
+#
+# NOTE: a large block of unreachable, duplicate dashboard-statistics code
+# previously sat here (after delete_backup()'s return statement, at the same
+# indentation level as its body, so Python treated it as dead code inside
+# that function - it never executed, but relied on undefined names like
+# ug_batches/pg_batches/total_ug_students and duplicated the working /admin
+# route above almost verbatim). It has been removed as part of this audit;
+# the real, correct dashboard logic is the /admin route above.
 
 
 @app.route(
@@ -2574,44 +2709,38 @@ def delete_backup():
 @login_required
 def upload_data():
 
+    course = normalize_course(request.form.get("course", ""))
+    batch = normalize_batch(request.form.get("batch", ""))
+    file = request.files.get("datafile")
 
-    course=request.form["course"].upper()
+    if course not in {"UG", "PG"} or not re.fullmatch(r"\d{4}_\d{4}", batch):
+        flash("Choose UG or PG and a batch in YYYY-YYYY format.", "error")
+        return redirect(url_for("admin"))
 
-
-    batch=request.form["batch"]\
-        .strip()\
-        .replace("-","_")
-
-
-
-    file=request.files.get(
-        "datafile"
-    )
-
-
-
-    if not file:
-
-        return redirect(
-            url_for("admin")
-        )
+    if not file or not file.filename:
+        try:
+            if create_empty_batch(course, batch):
+                flash(f"{course} {batch} batch created successfully.", "success")
+            else:
+                flash("Select a CSV/Excel file to replace an existing batch.", "error")
+        except OSError:
+            app.logger.exception("Could not create batch")
+            flash("Could not create the batch.", "error")
+        return redirect(url_for("admin"))
 
 
 
     try:
 
 
-        filename=file.filename.lower()
+        filename = secure_filename(file.filename).lower()
 
 
 
         if filename.endswith(".csv"):
 
 
-            df=pd.read_csv(
-                file,
-                dtype=str
-            )
+            df = pd.read_csv(file, dtype=str, engine="python")
 
 
 
@@ -2631,24 +2760,25 @@ def upload_data():
         else:
 
 
-            return render_template(
-                "admin.html",
-                error="Only CSV/XLS/XLSX allowed"
-            )
+            flash("Only CSV, XLS, and XLSX files are allowed.", "error")
+            return redirect(url_for("admin"))
 
 
 
-    except Exception as e:
-
-
-        return render_template(
-            "admin.html",
-            error=str(e)
-        )
+    except Exception:
+        app.logger.exception("Student data upload could not be read")
+        flash("The uploaded CSV/Excel file could not be read.", "error")
+        return redirect(url_for("admin"))
 
 
 
-    df=df.fillna("")
+    df = df.fillna("")
+    if df.empty:
+        flash("The uploaded file contains no student records.", "error")
+        return redirect(url_for("admin"))
+    if not {"RegNo", "Name"}.issubset(df.columns):
+        flash("The uploaded file must include RegNo and Name columns.", "error")
+        return redirect(url_for("admin"))
 
 
 
@@ -2669,15 +2799,32 @@ def upload_data():
 
 
 
-    df=df[columns]
+    df = df[columns]
+    df["RegNo"] = df["RegNo"].astype(str).str.strip()
+    df["Name"] = df["Name"].astype(str).str.strip()
+    if (df["RegNo"] == "").any() or (df["Name"] == "").any():
+        flash("Every uploaded student must have a RegNo and Name.", "error")
+        return redirect(url_for("admin"))
+    if not df["RegNo"].str.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}").all():
+        flash("One or more register numbers are invalid.", "error")
+        return redirect(url_for("admin"))
+    if df["RegNo"].duplicated().any():
+        flash("The uploaded file contains duplicate register numbers.", "error")
+        return redirect(url_for("admin"))
+    df["Course"] = course
+    df["Batch"] = batch
+    df["DOB"] = df["DOB"].map(format_dob_for_csv)
 
 
 
-    save_csv(
-        df,
-        course,
-        batch
-    )
+    try:
+        if os.path.exists(get_csv_path(course, batch)):
+            create_backup(f"Automatic Backup Before Replacing {course} {batch}")
+        save_csv(df, course, batch)
+    except Exception:
+        app.logger.exception("Student data upload could not be saved")
+        flash("The uploaded data was not saved; the previous batch was kept.", "error")
+        return redirect(url_for("admin"))
 
 
 
@@ -3014,47 +3161,46 @@ def save_new_student():
             col,
             ""
         )
-        new_student["DOB"] = format_dob_for_csv(
-    new_student.get("DOB", "")
-)
+
+    new_student["DOB"] = format_dob_for_csv(
+        new_student.get("DOB", "")
+    )
 
 
 
-    regno=request.form["RegNo"]
+    # BUG FIX: strip RegNo so a value with stray leading/trailing whitespace
+    # can't slip past the duplicate check in validate_student_details()
+    # (which compares the stripped value) while still being stored differently.
+    regno = request.form.get("RegNo", "").strip()
+    new_student["RegNo"] = regno
 
 
 
     # PHOTO
 
+    # BUG FIX: this previously saved the uploaded photo directly with
+    # photo.save(), bypassing save_uploaded_photo()'s safety checks (empty
+    # file check, atomic temp-file write, and - critically - the ValueError
+    # that get_photo_path() can raise for a RegNo that secure_filename()
+    # alters, which was unhandled here and would 500 the request). Routing
+    # through the same helper used everywhere else in the app makes photo
+    # handling consistent and this failure mode safe.
     if "Photo" in request.files:
 
-
-        photo=request.files["Photo"]
-
-
+        photo = request.files["Photo"]
 
         if photo.filename:
 
+            if allowed_photo(photo.filename):
 
-            if allowed_photo(
-                photo.filename
-            ):
+                try:
+                    filename = save_uploaded_photo(photo, course, batch, regno)
+                except ValueError as error:
+                    flash(str(error), "error")
+                    return redirect(url_for("add_student", course=course, batch=batch))
 
-
-                ext=os.path.splitext(
-                    photo.filename
-                )[1]
-
-
-                filename=regno+ext
-
-
-                photo_path = get_photo_path(course, batch, filename)
-                os.makedirs(os.path.dirname(photo_path), exist_ok=True)
-                photo.save(photo_path)
-
-
-                new_student["Photo"]=filename
+                if filename:
+                    new_student["Photo"] = filename
             else:
                 flash("Photo must be a JPG, JPEG, or PNG file.", "error")
                 return redirect(url_for("add_student", course=course, batch=batch))
@@ -3091,7 +3237,11 @@ def save_pg():
 
     course = normalize_course(request.form.get("course", ""))
     batch = normalize_batch(request.form.get("batch", ""))
-    regno = request.form["RegNo"]
+    regno = request.form.get("RegNo", "").strip()
+
+    if course != "PG" or not re.fullmatch(r"\d{4}_\d{4}", batch):
+        flash("Invalid course or batch.", "error")
+        return redirect(url_for("admin"))
 
     df = load_csv(course, batch)
 
@@ -3106,6 +3256,12 @@ def save_pg():
         return redirect(url_for("admin"))
 
     row = index[0]
+
+    validation_error = validate_student_details(request.form, df, is_new=False)
+    if validation_error:
+        flash(validation_error, "error")
+        return redirect(url_for("student_search", course=course, batch=batch,
+                                search_type="regno", keyword=regno))
 
     # Remove Photo
     photo = request.files.get("Photo")
@@ -3125,7 +3281,7 @@ def save_pg():
     # Update all fields
     for column in df.columns:
 
-        if column in request.form:
+        if column in request.form and column not in {"RegNo", "Course", "Batch", "Photo"}:
             df.loc[row, column] = request.form.get(column, "")
     # Convert DOB from HTML format to CSV format
     df.loc[row, "DOB"] = format_dob_for_csv(
@@ -3168,7 +3324,11 @@ def save_ug():
 
     course = normalize_course(request.form.get("course", ""))
     batch = normalize_batch(request.form.get("batch", ""))
-    regno = request.form["RegNo"]
+    regno = request.form.get("RegNo", "").strip()
+
+    if course != "UG" or not re.fullmatch(r"\d{4}_\d{4}", batch):
+        flash("Invalid course or batch.", "error")
+        return redirect(url_for("admin"))
 
     df = load_csv(course, batch)
 
@@ -3183,6 +3343,12 @@ def save_ug():
         return redirect(url_for("admin"))
 
     row = student_index[0]
+
+    validation_error = validate_student_details(request.form, df, is_new=False)
+    if validation_error:
+        flash(validation_error, "error")
+        return redirect(url_for("student_search", course=course, batch=batch,
+                                search_type="regno", keyword=regno))
 
     # Remove Photo
     photo = request.files.get("Photo")
@@ -3202,7 +3368,7 @@ def save_ug():
     # Update values
     for column in df.columns:
 
-        if column in request.form:
+        if column in request.form and column not in {"RegNo", "Course", "Batch", "Photo"}:
             df.loc[row, column] = request.form.get(column, "")
             # Convert DOB from HTML format to CSV format
     df.loc[row, "DOB"] = format_dob_for_csv(
@@ -3246,18 +3412,7 @@ def activity_log():
     logs=[]
 
 
-    if os.path.exists(LOG_FILE):
-
-        with open(
-            LOG_FILE,
-            "r",
-            encoding="utf-8"
-        ) as file:
-
-            logs=file.readlines()
-
-
-    logs.reverse()
+    logs = list(reversed(read_recent_log_lines(500)))
 
 
     return render_template(
@@ -3272,11 +3427,9 @@ def activity_log():
 @login_required
 def delete_student():
 
-    course=request.form["course"]
-
-    batch=request.form["batch"]
-
-    regno=request.form["RegNo"]
+    course = normalize_course(request.form.get("course", ""))
+    batch = normalize_batch(request.form.get("batch", ""))
+    regno = request.form.get("RegNo", "").strip()
 
 
     df=load_csv(
@@ -3287,9 +3440,15 @@ def delete_student():
 
     if df is not None:
 
+        matches = df[df["RegNo"].astype(str).str.strip() == regno]
+        if matches.empty:
+            flash("Student not found.", "error")
+            return redirect(url_for("admin"))
+        old_photo = str(matches.iloc[0].get("Photo", "")).strip()
+
 
         df=df[
-            df["RegNo"].astype(str)!=regno
+            df["RegNo"].astype(str).str.strip()!=regno
         ]
 
 
@@ -3298,6 +3457,17 @@ def delete_student():
             course,
             batch
         )
+
+
+        # Do this only after the CSV is safely replaced, so an I/O failure
+        # never removes a photo while the student record still references it.
+        if old_photo:
+            photo_path = get_existing_photo_path(course, batch, old_photo)
+            if os.path.isfile(photo_path):
+                try:
+                    os.remove(photo_path)
+                except OSError:
+                    write_log(f"Photo cleanup failed after deleting student | {regno}")
 
 
         write_log(
@@ -3322,13 +3492,25 @@ def change_password():
     if request.method=="POST":
 
 
-        new_password=request.form["password"]
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm_password = request.form.get("confirm_password", "")
 
 
         admin=load_admin()
 
+        if not verify_admin_password(admin, current_password):
+            return render_template("change_password.html", error="Current password is incorrect.")
+        if len(new_password) < 12:
+            return render_template("change_password.html", error="New password must be at least 12 characters.")
+        if new_password != confirm_password:
+            return render_template("change_password.html", error="New passwords do not match.")
 
-        admin["password"]=new_password
+
+        # SECURITY FIX: store the new password hashed rather than in plain
+        # text (see load_admin()/verify_admin_password() for the migration
+        # path for existing plaintext admin.json files).
+        admin["password"]=generate_password_hash(new_password)
 
 
         save_admin(admin)
@@ -3462,11 +3644,46 @@ def delete_batch():
     course = normalize_course(request.form.get("course", ""))
     batch = normalize_batch(request.form.get("batch", ""))
 
-    path = get_csv_path(course, batch)
+    try:
+        path = get_csv_path(course, batch)
+    except ValueError:
+        flash("Invalid course or batch.", "error")
+        return redirect(url_for("admin"))
 
     if os.path.exists(path):
-
-        os.remove(path)
+        try:
+            # A batch deletion is irreversible without a backup and must also
+            # remove its nested photographs, which otherwise retain personal
+            # data and accumulate as inaccessible files.
+            create_backup(f"Automatic Backup Before Deleting {course} {batch}")
+            photo_folder = get_photo_folder(course, batch)
+            pending_photo_folder = photo_folder + ".delete_pending"
+            pending_csv_path = path + ".delete_pending"
+            if os.path.exists(pending_photo_folder):
+                raise OSError("A previous batch photo deletion is still pending")
+            if os.path.exists(pending_csv_path):
+                raise OSError("A previous batch deletion is still pending")
+            if os.path.isdir(photo_folder):
+                os.rename(photo_folder, pending_photo_folder)
+            os.rename(path, pending_csv_path)
+            if os.path.isdir(pending_photo_folder):
+                shutil.rmtree(pending_photo_folder)
+            os.remove(pending_csv_path)
+        except Exception:
+            if 'pending_csv_path' in locals() and os.path.exists(pending_csv_path) and not os.path.exists(path):
+                try:
+                    os.rename(pending_csv_path, path)
+                except OSError:
+                    pass
+            if 'pending_photo_folder' in locals() and os.path.isdir(pending_photo_folder) \
+                    and not os.path.isdir(get_photo_folder(course, batch)):
+                try:
+                    os.rename(pending_photo_folder, get_photo_folder(course, batch))
+                except OSError:
+                    pass
+            app.logger.exception("Batch deletion failed")
+            flash("Batch deletion failed; check that the safety backup and files are writable.", "error")
+            return redirect(url_for("admin"))
 
         write_log(
             f"Deleted {course} Batch {batch}"
@@ -3488,7 +3705,16 @@ def add_batch():
     course = normalize_course(request.form.get("course", ""))
     batch = normalize_batch(request.form.get("batch", ""))
 
-    result = create_empty_batch(course,batch)
+    # BUG FIX: create_empty_batch() -> get_photo_folder() raises ValueError
+    # for a course that isn't UG/PG or a batch that doesn't match the
+    # required YYYY_YYYY shape. That was previously unhandled here and
+    # crashed the request with a 500 instead of a friendly flash message.
+    try:
+        result = create_empty_batch(course, batch)
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin"))
+
     if result:
 
         flash(
@@ -3521,8 +3747,16 @@ def student_search():
 
     course = normalize_course(search_data.get("course", ""))
     batch = normalize_batch(search_data.get("batch", ""))
-    search_type = search_data["search_type"]
-    keyword = search_data["keyword"].strip()
+
+    # BUG FIX: search_type/keyword were previously read with bracket access
+    # (search_data["search_type"]), which raises an unhandled 400/500 for any
+    # request missing either field instead of failing gracefully.
+    search_type = search_data.get("search_type", "").strip().lower()
+    keyword = search_data.get("keyword", "").strip()
+
+    if not search_type or not keyword:
+        flash("Please provide a search type and keyword.", "error")
+        return redirect(url_for("admin"))
 
     df = load_csv(course, batch)
     if df is None:
@@ -3600,15 +3834,21 @@ def validate_student_details(
 
         return "Register number is required."
 
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", regno):
+        return "Register number may contain only letters, numbers, hyphens, and underscores."
+
     if not name:
 
         return "Student name is required."
+
+    if len(name) > 120:
+        return "Student name is too long."
 
     if (
         is_new
         and
         not dataframe[
-            dataframe["RegNo"].astype(str) == regno
+            dataframe["RegNo"].astype(str).str.strip() == regno
         ].empty
     ):
 
@@ -3634,6 +3874,15 @@ def validate_student_details(
 
         return "Enter a valid email address."
 
+    dob = form.get("DOB", "").strip()
+    if dob:
+        try:
+            parsed_dob = pd.to_datetime(dob, format="%Y-%m-%d", errors="raise").date()
+        except (TypeError, ValueError):
+            return "Enter a valid date of birth."
+        if parsed_dob > date.today():
+            return "Date of birth cannot be in the future."
+
     return ""
 # ==========================================
 # RUN SERVER
@@ -3641,8 +3890,16 @@ def validate_student_details(
 
 if __name__ == "__main__":
 
+    # DEPLOYMENT / SECURITY FIX:
+    # - debug now defaults to OFF and is only enabled by explicitly setting
+    #   FLASK_DEBUG=1 in the environment (was hardcoded to True, which is a
+    #   remote-code-execution risk if this process is ever reachable
+    #   publicly, via the Werkzeug interactive debugger).
+    # - port now honors the PORT environment variable used by most hosting
+    #   platforms (Render, Heroku, etc.), falling back to 5000 to preserve
+    #   the existing local-development default.
     app.run(
         host="0.0.0.0",
-        port=5000,
-        debug=True
+        port=int(os.environ.get("PORT", 5000)),
+        debug=os.environ.get("FLASK_DEBUG", "0") == "1"
     )

@@ -140,6 +140,7 @@
                 <form action="{{ url_for('upload_student_photos') }}"
                       method="POST"
                       enctype="multipart/form-data">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
 
                     <!-- COURSE -->

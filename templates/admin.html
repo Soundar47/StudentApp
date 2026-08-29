@@ -66,12 +66,14 @@
             </button>
 
             <form action="{{ url_for('import_google_responses_route') }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <button class="nav-btn" type="submit">
                     <i class="icon" aria-hidden="true">↓</i>
                     <span>Import Google Form Responses</span>
                 </button>
             </form>
             <form action="{{ url_for('google_api_status_route') }}" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
                 <button class="nav-btn" type="submit">
                     <span>Check Google API Status</span>
                 </button>
@@ -139,12 +141,13 @@
         </nav>
 
         <div class="sidebar-footer">
-            <a href="{{ url_for('logout') }}" class="nav-link">
-                <button class="logout-btn" type="button">
+            <form action="{{ url_for('logout') }}" method="POST" class="nav-link">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                <button class="logout-btn" type="submit">
                     <i class="icon" aria-hidden="true">⏻</i>
                     <span>Logout</span>
                 </button>
-            </a>
+            </form>
         </div>
 
     </aside>
@@ -397,6 +400,7 @@
                       method="POST"
                       enctype="multipart/form-data"
                       class="form-box">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
                     <div class="input-group">
                         <label>Course</label>
@@ -451,6 +455,7 @@
         enctype="multipart/form-data"
         class="form-box"
     >
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         <!-- COURSE -->
 
@@ -645,6 +650,7 @@
                 </div>
 
                 <form action="{{ url_for('add_batch') }}" method="POST" class="form-box">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
                     <div class="input-group">
                         <label>Course</label>
@@ -677,6 +683,7 @@
                 </div>
 
                 <form action="{{ url_for('delete_batch') }}" method="POST" class="form-box">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
                     <div class="input-group">
                         <label>Course</label>

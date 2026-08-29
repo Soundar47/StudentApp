@@ -62,6 +62,7 @@ href="{{ url_for('static',filename='activity_log.css') }}">
 <form action="{{ url_for('clear_log') }}"
 method="POST"
 onsubmit="return confirm('Delete all activity history?');">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
 <button class="delete-btn">
 

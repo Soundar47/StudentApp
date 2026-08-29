@@ -29,6 +29,7 @@ href="{{ url_for('static', filename='view_students.css') }}">
 <!-- ================= SEARCH FORM ================= -->
 
 <form action="{{ url_for('view_students') }}" method="POST">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
 
 <div class="form-group">
@@ -259,6 +260,7 @@ class="edit-btn">
 method="POST"
 
 onsubmit="return confirm('Delete {{ s.get('Name','') }} ?');">
+<input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
 
 

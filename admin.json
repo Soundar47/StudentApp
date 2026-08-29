@@ -1,4 +1,4 @@
 {
     "username": "admin",
-    "password": "admin12"
+    "password": "scrypt:32768:8:1$vUCnXusXncIyhNwF$c69a55e0a5f33b4ef246bfc3fd24fb1400faf7a26bb11589a245e126104353a4392f75914b49c478f2a6faff6f0d1e848fd5f96b21e6345681d5df9a59f7931e"
 }

@@ -21,6 +21,7 @@
     {% endwith %}
 
     <form action="{{ url_for('save_new_student') }}" method="POST" enctype="multipart/form-data" class="student-form" novalidate>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="course" value="{{ course }}">
         <input type="hidden" name="batch" value="{{ batch }}">
 

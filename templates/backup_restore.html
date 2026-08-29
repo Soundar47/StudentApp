@@ -221,6 +221,7 @@
             method="POST"
             action="{{ url_for('create_backup_route') }}"
         >
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <button
                 type="submit"
@@ -253,6 +254,7 @@
             enctype="multipart/form-data"
             class="backup-upload"
         >
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <input
                 type="file"
@@ -357,6 +359,7 @@
                                 action="{{ url_for('restore_backup_route') }}"
                                 style="display:inline;"
                             >
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
                                 <input
                                     type="hidden"
@@ -382,6 +385,7 @@
                                 action="{{ url_for('delete_backup') }}"
                                 style="display:inline;"
                             >
+                                <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
                                 <input
                                     type="hidden"

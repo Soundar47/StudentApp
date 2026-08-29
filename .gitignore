@@ -9,6 +9,7 @@ data/**/*.xls
 
 # Activity and application logs
 activity.log
+activity.log.*
 *.log
 
 # Admin configuration (contains sensitive login info)
