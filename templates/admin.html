@@ -377,6 +377,7 @@
                     <p><strong>Responses Found</strong><span>{{ google_status.responses_found }}</span></p>
                     <p><strong>Google Sheets API</strong><span>{{ google_status.sheets }}</span></p>
                     <p><strong>Google Drive API</strong><span>{{ google_status.drive }}</span></p>
+                    <p><strong>Photo Folder</strong><span>{{ google_status.photo_folder|default('Not checked') }}</span></p>
                 {% endif %}
                 {% if google_status.reason %}
                     <h4>Reason</h4>

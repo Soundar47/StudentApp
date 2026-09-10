@@ -26,8 +26,20 @@ To verify the old Form URL still works, compare the URL logged by `inspectExisti
 ## Import behavior and test
 
 - Flask maps `UG + 2026-2029` to `data/ug/2026_2029.csv` and maps photos to `static/photos/ug/2026_2029/`.
+- The importer accepts Drive links in `/file/d/FILE_ID/view`, `/open?id=FILE_ID`, and `/uc?id=FILE_ID` formats, as well as a direct file ID. It extracts the ID, downloads the image through the Drive API, validates it, and saves it as `static/photos/<course>/<batch>/{RegNo}.jpg` or `{RegNo}.png` according to the uploaded image type.
 - It matches students by RegNo inside that exact Course/Batch CSV, updates only Form fields, and preserves all academic columns and rows.
 - A missing target CSV is reported and never created during import. CSV `Photo` stores only the filename.
 - The local ignored `google_import_log.json` prevents completed Sheet response rows being imported repeatedly.
+- The local ignored `google_photo_manifest.json` records the Drive file ID behind each local photo. This prevents re-downloading an unchanged image when another student field changes; a new Drive ID replaces the existing `{RegNo}.jpg` file.
 
-Before live use, make a backup in the existing Backup & Restore page, submit one UG and one PG test response with an image, click **Import Google Form Responses** as admin, and verify the Course/Batch summary, the nested photo path, and unchanged marks/attendance/result columns. Run import again without new submissions to confirm no duplicate student rows are created.
+Before live use:
+
+1. Make a backup in the existing Backup & Restore page.
+2. Submit one test response with a valid existing RegNo, Course (`UG` or `PG`), Batch, and a single image upload.
+3. Confirm the service account has Viewer access to both the response Sheet and the Drive folder containing that upload.
+4. Click **Import Google Form Responses** as admin.
+5. Verify `static/photos/<course>/<batch>/<RegNo>.jpg`, the CSV `Photo` value, and unchanged marks/attendance/result columns.
+6. Run import again without new submissions. It should skip the response and create no duplicate photo.
+7. Submit an updated photo for the same student and import again. The same local `{RegNo}.jpg` path should contain the replacement image.
+
+If a photo cannot be accessed, the import keeps the student data update, records a photo warning in the admin result, and writes the underlying Drive error to the Flask server log.

@@ -193,10 +193,12 @@ LOG_ROTATION_COUNT = int(os.environ.get("ACTIVITY_LOG_ROTATIONS", "5"))
 # successfully seen Form response rows; RegNo remains the duplicate protection
 # because repeated imports intentionally update an existing student.
 GOOGLE_IMPORT_LOG_FILE = os.path.join(BASE_DIR, "google_import_log.json")
+GOOGLE_PHOTO_MANIFEST_FILE = os.path.join(BASE_DIR, "google_photo_manifest.json")
 
-# ID of the existing Form response spreadsheet. An explicit environment value
-# still takes precedence so deployments can override it.
-DEFAULT_GOOGLE_SHEET_ID = "153RHUhM2Kms340iFLhQrY-KkC7mMmuecTUFNvyqe-Y8"
+# New Google resources must be configured explicitly; never fall back to a
+# legacy Sheet or Drive folder when the environment is missing.
+DEFAULT_GOOGLE_SHEET_ID = ""
+DEFAULT_GOOGLE_PHOTO_FOLDER_ID = ""
 
 # Each key is the application/CSV column and each value lists acceptable Google
 # Form or Sheet header names. Add an alias here if a Form question is renamed;
@@ -206,7 +208,9 @@ GOOGLE_FORM_FIELD_MAPPING = {
     "Name": ("Name", "Student Name"),
     "Course": ("Course", "Programme", "Program"),
     "Batch": ("Batch", "Academic Batch"),
+    "Year": ("Year", "Academic Year"),
     "DOB": ("DOB", "Date of Birth"),
+    "Gender": ("Gender", "Student Gender"),
     "Community": ("Community",),
     "ParentName": ("ParentName", "Father Name", "Parent Name"),
     "MotherName": ("MotherName", "Mother Name"),
@@ -222,6 +226,7 @@ GOOGLE_FORM_FIELD_MAPPING = {
     "Aadhar": ("Aadhar", "Aadhaar", "Aadhaar Number"),
     "BloodGroup": ("BloodGroup", "Blood Group"),
     "UmisID": ("UmisID", "UMIS ID"), "EmisNo": ("EmisNo", "EMIS No"),
+    "EmisID": ("EmisID", "EMIS ID"),
     "Email": ("Email", "Email Address"), "Photo": ("Photo", "Student Photo")
 }
 
@@ -258,7 +263,9 @@ COMMON_COLUMNS = [
     "Name",
     "Course",
     "Batch",
+    "Year",
     "DOB",
+    "Gender",
 
     "Community",
 
@@ -437,15 +444,20 @@ PG_COLUMNS = COMMON_COLUMNS + [
 
 
 GOOGLE_FORM_FIELDS = [
-    "RegNo", "Name", "Course", "Batch", "DOB", "Community",
+    "RegNo", "Name", "Course", "Batch", "Year", "DOB", "Gender", "Community",
     "ParentName", "MotherName", "faOccupation", "moOccupation",
     "AnualIncome", "Address", "Pincode", "Mobile", "FirstGraduate",
     "BankName", "Branch", "BankAccount", "IFSC", "MICR", "Aadhar",
-    "BloodGroup", "UmisID", "EmisNo", "Email", "Photo"
+    "BloodGroup", "UmisID", "EmisNo", "EmisID", "Email", "Photo"
 ]
 
-GOOGLE_FORM_REQUIRED_FIELDS = {"RegNo", "Name", "Course", "Batch"}
-ALLOWED_BLOOD_GROUPS = {"A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"}
+GOOGLE_FORM_REQUIRED_FIELDS = {"RegNo", "Name", "Course", "Batch", "Year"}
+ALLOWED_BLOOD_GROUPS = {
+    "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-",
+    "A+VE", "A-VE", "B+VE", "B-VE", "O+VE", "O-VE", "AB+VE", "AB-VE"
+}
+ALLOWED_GENDERS = {"Male", "Female", "Others"}
+ALLOWED_YEARS = {"I", "II", "III", "IV"}
 
 # Cap on how many per-response records are kept in the (client-side, cookie
 # based) Flask session after a Google Form import. Without this cap a large
@@ -733,6 +745,21 @@ def normalize_course(course):
     return str(course or "").strip().upper()
 
 
+def resolve_course_group(course):
+    """Map a Google Form course title to the app's UG/PG batch grouping."""
+    value = str(course or "").strip()
+    if not value:
+        return ""
+    normalized = re.sub(r"[^A-Z0-9]+", " ", value.upper()).strip()
+    if normalized in {"UG", "PG"}:
+        return normalized
+    if "B SC" in normalized or "BACHELOR OF SCIENCE" in normalized:
+        return "UG"
+    if "M SC" in normalized or "MASTER OF SCIENCE" in normalized:
+        return "PG"
+    return ""
+
+
 def get_csv_path(course, batch):
     """Return the CSV path for an exact course/batch combination."""
     course = normalize_course(course)
@@ -895,27 +922,25 @@ def google_safe_error_reason(error):
         return "Service account credentials not found."
     if isinstance(error, PermissionError):
         return "Service account credentials could not be read."
-    if isinstance(error, (TimeoutError, ConnectionError, OSError)):
-        return "Network connection to Google API failed. Check internet access and try again."
-
     status = getattr(getattr(error, "resp", None), "status", None)
     error_text = str(error).lower()
-    if status == 404:
-        # Google can return 404 for inaccessible private files, so it is not
-        # safe to claim which of these two causes occurred. The full exception
-        # remains in the Flask server log.
-        return "Spreadsheet not found, or the service account does not have permission to access it."
+    if status == 401:
+        return "Google API authentication failed. Check the service-account credentials."
     if status == 403:
         if "accessnotconfigured" in error_text or "has not been used" in error_text:
             return "Google Sheets or Google Drive API is not enabled for the service-account project."
-        return "Service account does not have permission to access the spreadsheet or uploaded photos."
-    if status == 401:
-        return "Google service account credentials are invalid or disabled."
+        return "Service account does not have permission to access the Google resource."
+    if status == 404:
+        return "Google Sheet, Drive file, or folder was not found, or access was denied."
+    if isinstance(error, (TimeoutError, ConnectionError, OSError)):
+        return "Network connection to Google API failed. Check internet access and try again."
     if "malformed" in error_text or "service account" in error_text or "private key" in error_text:
         return "Service account credentials are invalid."
     if "timeout" in error_text or "timed out" in error_text or "connection" in error_text:
         return "Network connection to Google API failed. Check internet access and try again."
-    return "Google API connection failed. See the server log for the underlying error."
+    if status is not None:
+        return f"Google API error (HTTP {status}): {str(error)[:300]}"
+    return f"Google API error: {str(error)[:300]}"
 
 def get_google_credentials():
     """Load service-account credentials from the configured private JSON file."""
@@ -960,6 +985,15 @@ def google_services():
     )
 
 
+def google_photo_folder_id():
+    """Return the configured existing Drive photo-folder ID."""
+
+    folder_id = os.environ.get("GOOGLE_PHOTO_FOLDER_ID", DEFAULT_GOOGLE_PHOTO_FOLDER_ID).strip()
+    if not folder_id:
+        raise GoogleImportConfigurationError("Google Drive photo folder ID is not configured.")
+    return folder_id
+
+
 def get_google_sheet():
     """Return the configured Sheets client and spreadsheet ID for admin tasks."""
 
@@ -992,6 +1026,21 @@ def get_photo_folder(course, batch):
     if not re.fullmatch(r"\d{4}_\d{4}", batch):
         raise ValueError("Invalid batch")
     return os.path.join(PHOTO_FOLDER, course.lower(), batch)
+
+
+def existing_batch_paths(course, batch):
+    """Return paths for an admin-created batch, or raise a clear error."""
+
+    csv_path = get_csv_path(course, batch)
+    photo_folder = get_photo_folder(course, batch)
+    if not os.path.isfile(csv_path) or not os.path.isdir(photo_folder):
+        normalized_course = normalize_course(course)
+        normalized_batch = normalize_batch(batch)
+        raise FileNotFoundError(
+            f"Batch {normalized_course}/{normalized_batch} does not exist. "
+            "Please create the batch from Admin first."
+        )
+    return csv_path, photo_folder
 
 
 def get_photo_path(course, batch, filename):
@@ -1096,12 +1145,20 @@ def validate_google_form_row(row):
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", regno):
         return "Invalid register number"
 
-    course = str(row["Course"]).strip().upper()
-    if course not in {"UG", "PG"}:
-        return "Course must be UG or PG"
+    course_group = resolve_course_group(row.get("Course", ""))
+    if not course_group:
+        return "Course must be a supported UG/PG course name"
 
     if not re.fullmatch(r"\d{4}[-_]\d{4}", str(row["Batch"]).strip()):
         return "Invalid Batch (use YYYY-YYYY)"
+
+    year_value = str(row.get("Year", "")).strip()
+    if year_value and year_value not in ALLOWED_YEARS:
+        return "Invalid Year (use I, II, III or IV)"
+
+    gender_value = str(row.get("Gender", "")).strip()
+    if gender_value and gender_value not in ALLOWED_GENDERS:
+        return "Invalid Gender"
 
     for field, pattern in {
         "Mobile": r"\d{7,15}", "Pincode": r"\d{4,10}",
@@ -1117,7 +1174,8 @@ def validate_google_form_row(row):
         return "Invalid Email"
     if row.get("FirstGraduate") and row["FirstGraduate"].title() not in {"Yes", "No"}:
         return "FirstGraduate must be Yes or No"
-    if row.get("BloodGroup") and row["BloodGroup"] not in ALLOWED_BLOOD_GROUPS:
+    blood_group = str(row.get("BloodGroup", "")).strip()
+    if blood_group and blood_group not in ALLOWED_BLOOD_GROUPS:
         return "Invalid BloodGroup"
     return ""
 
@@ -1176,8 +1234,45 @@ def add_import_record(result, row, status, message, photo=""):
 def google_drive_file_id(value):
     """Extract a Drive ID from common Forms response formats."""
 
-    match = re.search(r"[-\w]{20,}", str(value or "").strip())
-    return match.group(0) if match else ""
+    value = str(value or "").strip()
+    if not value:
+        return ""
+    patterns = (
+        r"drive\.google\.com/file/d/([-\w]+)",
+        r"drive\.google\.com/open\?id=([-\w]+)",
+        r"drive\.google\.com/uc\?(?:[^#]*&)?id=([-\w]+)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, value, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    if re.fullmatch(r"[-\w]{20,}", value):
+        return value
+    return ""
+
+
+def load_google_photo_manifest():
+    """Return the last Drive file ID imported for each local photo."""
+
+    try:
+        with open(GOOGLE_PHOTO_MANIFEST_FILE, "r", encoding="utf-8") as file:
+            manifest = json.load(file)
+        return manifest if isinstance(manifest, dict) else {}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def save_google_photo_manifest(manifest):
+    """Atomically save Drive IDs used by local photos."""
+
+    temporary_path = GOOGLE_PHOTO_MANIFEST_FILE + ".tmp"
+    with open(temporary_path, "w", encoding="utf-8") as file:
+        json.dump(manifest, file, indent=2, sort_keys=True)
+    os.replace(temporary_path, GOOGLE_PHOTO_MANIFEST_FILE)
+
+
+def google_photo_manifest_key(course, batch, regno):
+    return f"{normalize_course(course)}/{normalize_batch(batch)}/{regno}"
 
 
 def download_google_photo(drive_service, photo_value, course, batch, regno):
@@ -1191,18 +1286,16 @@ def download_google_photo(drive_service, photo_value, course, batch, regno):
     metadata = drive_service.files().get(
         fileId=file_id, fields="name,mimeType", supportsAllDrives=True
     ).execute()
+    mime_type = metadata.get("mimeType", "")
     extension = os.path.splitext(secure_filename(metadata.get("name", "")))[1].lower()
-    if metadata.get("mimeType") not in {"image/jpeg", "image/png"} \
+    if mime_type not in {"image/jpeg", "image/png"} \
             or extension not in {".jpg", ".jpeg", ".png"}:
         raise ValueError("Photo is not a JPG, JPEG, or PNG image")
 
-    # The application always stores a single canonical JPEG name per RegNo,
-    # regardless of whether the Form upload was JPG, JPEG, or PNG.
-    filename = secure_filename(regno) + ".jpg"
+    extension = ".png" if mime_type == "image/png" else ".jpg"
+    filename = secure_filename(regno) + extension
     destination = get_photo_path(course, batch, filename)
-    os.makedirs(os.path.dirname(destination), exist_ok=True)
     temporary_path = None
-    converted_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temporary:
             temporary_path = temporary.name
@@ -1219,28 +1312,21 @@ def download_google_photo(drive_service, photo_value, course, batch, regno):
             with Image.open(temporary_path) as image:
                 image.verify()
             with Image.open(temporary_path) as image:
+                if image.format not in {"JPEG", "PNG"}:
+                    raise ValueError("Downloaded photo is not a JPG or PNG image")
+                if os.path.getsize(temporary_path) > MAX_PHOTO_BYTES:
+                    raise ValueError("Downloaded photo is too large")
                 if image.width * image.height > MAX_PHOTO_PIXELS:
                     raise ValueError("Downloaded photo has too many pixels")
-                if image.mode in {"RGBA", "LA"}:
-                    background = Image.new("RGB", image.size, "white")
-                    background.paste(image, mask=image.getchannel("A"))
-                    image = background
-                elif image.mode != "RGB":
-                    image = image.convert("RGB")
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as converted:
-                    converted_path = converted.name
-                image.save(converted_path, "JPEG")
         except (OSError, UnidentifiedImageError, ValueError) as error:
             raise ValueError("Downloaded photo is not a valid image") from error
 
-        os.replace(converted_path, destination)
-        converted_path = None
+        os.replace(temporary_path, destination)
+        temporary_path = None
         return os.path.basename(destination)
     finally:
         if temporary_path and os.path.exists(temporary_path):
             os.remove(temporary_path)
-        if converted_path and os.path.exists(converted_path):
-            os.remove(converted_path)
 
 
 def google_sheet_row(headers, values_row):
@@ -1274,44 +1360,6 @@ def google_api_status():
     try:
         sheets_service, drive_service, sheet_id = google_services()
 
-        # Test Spreadsheet access
-        spreadsheet = sheets_service.spreadsheets().get(
-            spreadsheetId=sheet_id,
-            fields="spreadsheetId,properties(title)"
-        ).execute()
-
-        spreadsheet_title = (
-            spreadsheet.get("properties", {}).get("title", "")
-        )
-
-        # Detect Form response worksheet
-        response_range = google_response_range(
-            sheets_service,
-            sheet_id
-        )
-
-        # Test response data access
-        values = sheets_service.spreadsheets().values().get(
-            spreadsheetId=sheet_id,
-            range=response_range
-        ).execute().get("values", [])
-
-        # Test Drive API itself
-        drive_service.files().list(
-            pageSize=1,
-            fields="files(id,name)"
-        ).execute()
-
-        return {
-            "connection": "SUCCESS",
-            "spreadsheet": "Connected",
-            "spreadsheet_title": spreadsheet_title,
-            "worksheet": response_range,
-            "responses_found": max(len(values) - 1, 0),
-            "sheets": "Connected",
-            "drive": "Connected"
-        }
-
     except Exception as error:
         app.logger.exception(
             "Google API diagnostic failed: %s",
@@ -1325,8 +1373,81 @@ def google_api_status():
             "responses_found": 0,
             "sheets": "Not connected",
             "drive": "Not connected",
+            "photo_folder": "Not accessible",
             "reason": google_safe_error_reason(error)
         }
+
+    result = {
+        "connection": "SUCCESS",
+        "spreadsheet": "Not checked",
+        "spreadsheet_title": "",
+        "worksheet": "",
+        "responses_found": 0,
+        "sheets": "Not checked",
+        "drive": "Not checked",
+        "photo_folder": "Not checked",
+        "reason": ""
+    }
+
+    try:
+        spreadsheet = sheets_service.spreadsheets().get(
+            spreadsheetId=sheet_id,
+            fields="spreadsheetId,properties(title)"
+        ).execute()
+        result["spreadsheet"] = "Connected"
+        result["spreadsheet_title"] = spreadsheet.get("properties", {}).get("title", "")
+        response_range = google_response_range(sheets_service, sheet_id)
+        values = sheets_service.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range=response_range
+        ).execute().get("values", [])
+        result.update({
+            "worksheet": response_range,
+            "responses_found": max(len(values) - 1, 0),
+            "sheets": "Connected"
+        })
+    except Exception as error:
+        app.logger.exception("Google Sheets diagnostic failed: %s", error)
+        result["spreadsheet"] = "Not connected"
+        result["sheets"] = "Not connected"
+        result["reason"] = google_safe_error_reason(error)
+
+    try:
+        drive_service.files().list(
+            pageSize=1,
+            fields="files(id,name)"
+        ).execute()
+        result["drive"] = "Connected"
+    except Exception as error:
+        app.logger.exception("Google Drive diagnostic failed: %s", error)
+        result["drive"] = "Not connected"
+        result["reason"] = result["reason"] or google_safe_error_reason(error)
+
+    if result["drive"] == "Connected":
+        try:
+            photo_folder = drive_service.files().get(
+                fileId=google_photo_folder_id(),
+                fields="id,name,mimeType",
+                supportsAllDrives=True
+            ).execute()
+            if photo_folder.get("mimeType") != "application/vnd.google-apps.folder":
+                raise GoogleImportConfigurationError(
+                    "Configured Google Drive photo resource is not a folder."
+                )
+            result["photo_folder"] = "Accessible"
+        except Exception as error:
+            app.logger.exception("Google Drive photo folder check failed: %s", error)
+            result["photo_folder"] = "Not accessible"
+            result["reason"] = result["reason"] or (
+                "Photo folder is not accessible to the Service Account."
+            )
+
+    if result["spreadsheet"] != "Connected" or result["drive"] != "Connected":
+        result["connection"] = "FAILED"
+    elif result["photo_folder"] != "Accessible":
+        result["connection"] = "FAILED"
+
+    return result
 
 
 def import_google_form_responses():
@@ -1343,6 +1464,7 @@ def import_google_form_responses():
 
     headers = [str(header).strip() for header in values[0]]
     imported_ids = load_google_import_log()
+    photo_manifest = load_google_photo_manifest()
     backup_created = False
     for sheet_row_number, values_row in enumerate(values[1:], start=2):
         import_id = response_row_id(sheet_row_number, headers, values_row)
@@ -1364,18 +1486,27 @@ def import_google_form_responses():
             write_log(f"Skipped Google Form record | {regno} | {validation_error}")
             continue
 
-        course = row["Course"].upper()
-        batch = row["Batch"].replace("-", "_")
-        csv_path = get_csv_path(course, batch)
-        if not os.path.isfile(csv_path):
-            reason = f"CSV not found for {course} / {batch.replace('_', '-')}"
+        course_group = resolve_course_group(row.get("Course", ""))
+        if not course_group:
+            reason = "Course must be a supported UG/PG course name"
             result["skipped"] += 1
-            add_import_group_count(result, course, batch, "skipped")
             result["errors"].append({"regno": regno, "reason": reason})
             add_import_record(result, row, "SKIPPED", reason)
             write_log(f"Skipped Google Form record | {regno} | {reason}")
             continue
-        dataframe = load_csv(course, batch)
+
+        batch = row["Batch"].replace("-", "_")
+        try:
+            csv_path, _photo_folder = existing_batch_paths(course_group, batch)
+        except FileNotFoundError as error:
+            reason = str(error)
+            result["skipped"] += 1
+            add_import_group_count(result, course_group, batch, "skipped")
+            result["errors"].append({"regno": regno, "reason": reason})
+            add_import_record(result, row, "SKIPPED", reason)
+            write_log(f"Skipped Google Form record | {regno} | {reason}")
+            continue
+        dataframe = load_csv(course_group, batch)
         if dataframe is None or "RegNo" not in dataframe.columns:
             result["failed"] += 1
             add_import_group_count(result, course, batch, "failed")
@@ -1420,9 +1551,17 @@ def import_google_form_responses():
         photo_failed = False
         if row.get("Photo"):
             try:
-                photo_filename = download_google_photo(
-                    drive_service, row["Photo"], course, batch, regno
-                )
+                photo_file_id = google_drive_file_id(row["Photo"])
+                manifest_key = google_photo_manifest_key(course, batch, regno)
+                photo_filename = f"{secure_filename(regno)}.jpg"
+                photo_path = get_photo_path(course, batch, photo_filename)
+                if (photo_manifest.get(manifest_key) != photo_file_id
+                        or not os.path.isfile(photo_path)):
+                    photo_filename = download_google_photo(
+                        drive_service, row["Photo"], course, batch, regno
+                    )
+                    photo_manifest[manifest_key] = photo_file_id
+                    save_google_photo_manifest(photo_manifest)
                 old_photo = str(dataframe.loc[row_index, "Photo"]).strip() if "Photo" in dataframe.columns else ""
                 if "Photo" in dataframe.columns:
                     dataframe.loc[row_index, "Photo"] = photo_filename
@@ -1431,20 +1570,21 @@ def import_google_form_responses():
                     if os.path.isfile(old_path):
                         os.remove(old_path)
                 result["photos"] += 1
-                add_import_group_count(result, course, batch, "photos")
+                add_import_group_count(result, course_group, batch, "photos")
                 write_log(f"Photo downloaded | {regno}")
-            except Exception:
+            except Exception as error:
                 result.setdefault("photo_warnings", []).append({
                     "regno": regno,
                     "reason": "Photo download failed"
                 })
+                app.logger.warning("Google Drive photo failed for %s: %s", regno, error)
                 write_log(f"Photo warning | {regno} | Photo download failed")
                 photo_failed = True
 
-        save_csv(dataframe, course, batch)
+        save_csv(dataframe, course_group, batch)
         if is_new:
             result["new"] += 1
-            add_import_group_count(result, course, batch, "new")
+            add_import_group_count(result, course_group, batch, "new")
             write_log(f"New student from Google Form | {regno}")
             add_import_record(
                 result, row, "NEW",
@@ -1453,7 +1593,7 @@ def import_google_form_responses():
             )
         else:
             result["updated"] += 1
-            add_import_group_count(result, course, batch, "updated")
+            add_import_group_count(result, course_group, batch, "updated")
             write_log(f"Existing student updated from Google Form | {regno}")
             add_import_record(
                 result, row, "UPDATED",
@@ -1497,7 +1637,8 @@ def trim_import_result_for_session(result):
 BACKUP_ALLOWED_FILES = {
     "admin.json",
     "activity.log",
-    "google_import_log.json"
+    "google_import_log.json",
+    "google_photo_manifest.json"
 }
 
 
@@ -1679,7 +1820,10 @@ def create_backup(reason="Manual Backup"):
             add_tree(archive, DATA_FOLDER)
             add_tree(archive, PHOTO_FOLDER)
             add_tree(archive, UPLOADS_FOLDER)
-            files_to_add = [ADMIN_FILE, LOG_FILE, GOOGLE_IMPORT_LOG_FILE]
+            files_to_add = [
+                ADMIN_FILE, LOG_FILE, GOOGLE_IMPORT_LOG_FILE,
+                GOOGLE_PHOTO_MANIFEST_FILE
+            ]
             files_to_add.extend(f"{LOG_FILE}.{index}" for index in range(1, LOG_ROTATION_COUNT + 1))
             for file_path in files_to_add:
                 if os.path.isfile(file_path) and not os.path.islink(file_path):
@@ -1892,6 +2036,12 @@ def restore_backup(zip_path):
         extracted_google_log = os.path.join(temp_folder, os.path.basename(GOOGLE_IMPORT_LOG_FILE))
         if os.path.exists(extracted_google_log):
             shutil.copy2(extracted_google_log, GOOGLE_IMPORT_LOG_FILE)
+
+        extracted_photo_manifest = os.path.join(
+            temp_folder, os.path.basename(GOOGLE_PHOTO_MANIFEST_FILE)
+        )
+        if os.path.exists(extracted_photo_manifest):
+            shutil.copy2(extracted_photo_manifest, GOOGLE_PHOTO_MANIFEST_FILE)
 
         write_log(
             "Backup Restored Successfully"
