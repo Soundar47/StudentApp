@@ -2,9 +2,11 @@
 import json
 import os
 import sys
+from dotenv import load_dotenv
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 LEGACY_SHEET_ID = "153RHUhM2Kms340iFLhQrY-KkC7mMmuecTUFNvyqe-Y8"
-LEGACY_DEFAULT_SHEET_ID = "1G00qJaYGAKn49TtaNHbPwArFAkCpfUkgoEOze7LHx4g"
 LEGACY_DEFAULT_FOLDER_ID = "1nib4js7EkrszgAU-vtRl-TD0ZtviZhNz"
 
 
@@ -43,7 +45,7 @@ def main():
     sheet_id = os.environ.get("GOOGLE_SHEET_ID", "").strip()
     folder_id = os.environ.get("GOOGLE_PHOTO_FOLDER_ID", "").strip()
     result = {"checks": [], "service_account_email": ""}
-    if not sheet_id or sheet_id in {LEGACY_SHEET_ID, LEGACY_DEFAULT_SHEET_ID}:
+    if not sheet_id or sheet_id == LEGACY_SHEET_ID:
         result["checks"].append({"name": "new spreadsheet configuration", "status": "FAIL", "reason": "new GOOGLE_SHEET_ID is required"})
     if not folder_id or folder_id == LEGACY_DEFAULT_FOLDER_ID:
         result["checks"].append({"name": "new photo folder configuration", "status": "FAIL", "reason": "new GOOGLE_PHOTO_FOLDER_ID is required"})
