@@ -98,3 +98,5 @@ instance/
 *.json
 !requirements.json
 !package.json
+
+templates/*.csv

@@ -17,6 +17,7 @@ import re
 import hashlib
 import shutil
 import tempfile
+import traceback
 import zipfile
 import stat
 import secrets
@@ -856,11 +857,12 @@ class GoogleImportConfigurationError(RuntimeError):
 
 
 def google_credentials_path():
-    """Return an absolute service-account path without exposing its contents."""
+    """Return the configured service-account path, honoring standard Google env vars."""
 
     configured_path = (
         os.environ.get("GOOGLE_CREDENTIALS_FILE")
         or os.environ.get("GOOGLE_SERVICE_ACCOUNT_FILE")
+        or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         or os.path.join("secrets", "google-service-account.json")
     )
     if not os.path.isabs(configured_path):
@@ -918,22 +920,26 @@ def google_safe_error_reason(error):
 
     if isinstance(error, GoogleImportConfigurationError):
         return str(error)
+
     if isinstance(error, FileNotFoundError):
-        return "Service account credentials not found."
+        return "Service account credentials file was not found. Check GOOGLE_CREDENTIALS_FILE, GOOGLE_SERVICE_ACCOUNT_FILE, or GOOGLE_APPLICATION_CREDENTIALS."
     if isinstance(error, PermissionError):
-        return "Service account credentials could not be read."
+        return "Service account credentials could not be read due to file permissions."
+
     status = getattr(getattr(error, "resp", None), "status", None)
     error_text = str(error).lower()
     if status == 401:
-        return "Google API authentication failed. Check the service-account credentials."
+        return "Google API authentication failed. Check the service-account credentials and project permissions."
     if status == 403:
         if "accessnotconfigured" in error_text or "has not been used" in error_text:
             return "Google Sheets or Google Drive API is not enabled for the service-account project."
-        return "Service account does not have permission to access the Google resource."
+        return "Service account does not have permission to access the Google resource. Check Sheet/Drive sharing and IAM roles."
     if status == 404:
-        return "Google Sheet, Drive file, or folder was not found, or access was denied."
-    if isinstance(error, (TimeoutError, ConnectionError, OSError)):
+        return "Google Sheet, Drive file, or folder was not found, or the service account cannot access it."
+    if isinstance(error, (TimeoutError, ConnectionError)):
         return "Network connection to Google API failed. Check internet access and try again."
+    if isinstance(error, OSError) and "no such file" in error_text:
+        return "The configured Google credentials file does not exist."
     if "malformed" in error_text or "service account" in error_text or "private key" in error_text:
         return "Service account credentials are invalid."
     if "timeout" in error_text or "timed out" in error_text or "connection" in error_text:
@@ -941,6 +947,96 @@ def google_safe_error_reason(error):
     if status is not None:
         return f"Google API error (HTTP {status}): {str(error)[:300]}"
     return f"Google API error: {str(error)[:300]}"
+
+
+def google_import_error_context(error, stage="Google Form import"):
+    """Return a safe admin message plus the real exception details for debugging."""
+
+    safe_reason = google_safe_error_reason(error)
+    status = getattr(getattr(error, "resp", None), "status", None)
+    message = str(error)
+    error_text = message.lower()
+
+    if status == 401:
+        category = "authentication_error"
+    elif status == 403:
+        category = "permission_error"
+    elif status == 404:
+        category = "missing_sheet_or_range"
+    elif isinstance(error, GoogleImportConfigurationError):
+        category = "configuration_error"
+    elif isinstance(error, FileNotFoundError):
+        category = "missing_file"
+    elif isinstance(error, PermissionError):
+        category = "permission_error"
+    elif isinstance(error, (TimeoutError, ConnectionError)):
+        category = "actual_network_error"
+    elif "photo" in error_text or "drive" in error_text:
+        category = "google_drive_photo_error"
+    elif "date" in error_text or "dob" in error_text:
+        category = "date_conversion_error"
+    elif "csv" in error_text or "dataframe" in error_text:
+        category = "csv_error"
+    elif "field" in error_text or "missing" in error_text:
+        category = "missing_form_field"
+    elif status is not None:
+        category = "google_sheets_error"
+    else:
+        category = "unexpected_import_error"
+
+    return {
+        "stage": stage,
+        "category": category,
+        "safe_reason": safe_reason,
+        "exception_type": type(error).__name__,
+        "message": message,
+        "traceback": traceback.format_exc(),
+    }
+
+
+def google_import_error_context(error, stage="Google Form import"):
+    """Return a diagnostic payload that exposes the real exception while keeping the UI safe."""
+
+    safe_reason = google_safe_error_reason(error)
+    status = getattr(getattr(error, "resp", None), "status", None)
+    message = str(error)
+    error_text = message.lower()
+
+    if status == 401:
+        category = "authentication_error"
+    elif status == 403:
+        category = "permission_error"
+    elif status == 404:
+        category = "missing_sheet_or_range"
+    elif isinstance(error, GoogleImportConfigurationError):
+        category = "configuration_error"
+    elif isinstance(error, FileNotFoundError):
+        category = "missing_file"
+    elif isinstance(error, PermissionError):
+        category = "permission_error"
+    elif isinstance(error, (TimeoutError, ConnectionError)):
+        category = "actual_network_error"
+    elif "photo" in error_text or "drive" in error_text:
+        category = "google_drive_photo_error"
+    elif "date" in error_text or "dob" in error_text:
+        category = "date_conversion_error"
+    elif "csv" in error_text or "dataframe" in error_text:
+        category = "csv_error"
+    elif "field" in error_text or "missing" in error_text:
+        category = "missing_form_field"
+    elif status is not None:
+        category = "google_sheets_error"
+    else:
+        category = "unexpected_import_error"
+
+    return {
+        "stage": stage,
+        "category": category,
+        "safe_reason": safe_reason,
+        "exception_type": type(error).__name__,
+        "message": message,
+        "traceback": traceback.format_exc(),
+    }
 
 def get_google_credentials():
     """Load service-account credentials from the configured private JSON file."""
@@ -1467,143 +1563,130 @@ def import_google_form_responses():
     photo_manifest = load_google_photo_manifest()
     backup_created = False
     for sheet_row_number, values_row in enumerate(values[1:], start=2):
-        import_id = response_row_id(sheet_row_number, headers, values_row)
-        row = google_sheet_row(headers, values_row)
-        row = {field: str(row.get(field, "")).strip() for field in GOOGLE_FORM_FIELDS}
-        if import_id in imported_ids:
-            # A successful, unchanged response has already been merged.  A
-            # changed response has a different content hash and is therefore
-            # still processed as an update.
-            result["skipped"] += 1
-            add_import_record(result, row, "SKIPPED", "Previously imported")
-            continue
-        validation_error = validate_google_form_row(row)
-        regno = row.get("RegNo", "") or "(blank)"
-        if validation_error:
-            result["skipped"] += 1
-            result["errors"].append({"regno": regno, "reason": validation_error})
-            add_import_record(result, row, "SKIPPED", validation_error)
-            write_log(f"Skipped Google Form record | {regno} | {validation_error}")
-            continue
-
-        course_group = resolve_course_group(row.get("Course", ""))
-        if not course_group:
-            reason = "Course must be a supported UG/PG course name"
-            result["skipped"] += 1
-            result["errors"].append({"regno": regno, "reason": reason})
-            add_import_record(result, row, "SKIPPED", reason)
-            write_log(f"Skipped Google Form record | {regno} | {reason}")
-            continue
-
-        batch = row["Batch"].replace("-", "_")
+        regno = "(blank)"
+        course_group = ""
+        batch = ""
+        row = {}
         try:
-            csv_path, _photo_folder = existing_batch_paths(course_group, batch)
-        except FileNotFoundError as error:
-            reason = str(error)
-            result["skipped"] += 1
-            add_import_group_count(result, course_group, batch, "skipped")
-            result["errors"].append({"regno": regno, "reason": reason})
-            add_import_record(result, row, "SKIPPED", reason)
-            write_log(f"Skipped Google Form record | {regno} | {reason}")
-            continue
-        dataframe = load_csv(course_group, batch)
-        if dataframe is None or "RegNo" not in dataframe.columns:
-            result["failed"] += 1
-            add_import_group_count(result, course, batch, "failed")
-            result["errors"].append({
-                "regno": regno,
-                "reason": "Target batch CSV could not be loaded"
-            })
-            add_import_record(result, row, "FAILED", "Target batch CSV could not be loaded")
-            write_log(f"Failed Google Form record | {regno} | Target batch CSV unavailable")
-            continue
-
-        # Reuse the application's complete backup facility once per import run,
-        # before the first CSV or photo is changed.
-        if not backup_created:
-            try:
-                create_backup("Automatic Backup Before Google Form Import")
-                backup_created = True
-            except Exception as error:
-                result["failed"] += 1
-                add_import_group_count(result, course, batch, "failed")
-                result["errors"].append({
-                    "regno": regno,
-                    "reason": "Safety backup could not be created"
-                })
-                add_import_record(result, row, "FAILED", "Safety backup could not be created")
-                write_log(f"Failed Google Form record | {regno} | Backup failed: {error}")
+            import_id = response_row_id(sheet_row_number, headers, values_row)
+            row = google_sheet_row(headers, values_row)
+            row = {field: str(row.get(field, "")).strip() for field in GOOGLE_FORM_FIELDS}
+            regno = row.get("RegNo", "") or "(blank)"
+            if import_id in imported_ids:
+                result["skipped"] += 1
+                add_import_record(result, row, "SKIPPED", "Previously imported")
                 continue
 
-        matches = dataframe[dataframe["RegNo"].astype(str).str.strip() == regno].index
-        is_new = len(matches) == 0
-        if is_new:
-            row_index = max(dataframe.index, default=-1) + 1
-            dataframe.loc[row_index] = {column: "" for column in dataframe.columns}
-        else:
-            row_index = matches[0]
+            validation_error = validate_google_form_row(row)
+            if validation_error:
+                result["skipped"] += 1
+                result["errors"].append({"regno": regno, "reason": validation_error})
+                add_import_record(result, row, "SKIPPED", validation_error)
+                write_log(f"Skipped Google Form record | {regno} | {validation_error}")
+                continue
 
-        for field in GOOGLE_FORM_FIELDS:
-            if field != "Photo" and field in dataframe.columns:
-                value = row[field]
-                dataframe.loc[row_index, field] = format_dob_for_csv(value) if field == "DOB" else value
+            course_group = resolve_course_group(row.get("Course", ""))
+            if not course_group:
+                reason = "Course must be a supported UG/PG course name"
+                result["skipped"] += 1
+                result["errors"].append({"regno": regno, "reason": reason})
+                add_import_record(result, row, "SKIPPED", reason)
+                write_log(f"Skipped Google Form record | {regno} | {reason}")
+                continue
 
-        photo_failed = False
-        if row.get("Photo"):
-            try:
-                photo_file_id = google_drive_file_id(row["Photo"])
-                manifest_key = google_photo_manifest_key(course, batch, regno)
-                photo_filename = f"{secure_filename(regno)}.jpg"
-                photo_path = get_photo_path(course, batch, photo_filename)
-                if (photo_manifest.get(manifest_key) != photo_file_id
-                        or not os.path.isfile(photo_path)):
-                    photo_filename = download_google_photo(
-                        drive_service, row["Photo"], course, batch, regno
-                    )
-                    photo_manifest[manifest_key] = photo_file_id
-                    save_google_photo_manifest(photo_manifest)
-                old_photo = str(dataframe.loc[row_index, "Photo"]).strip() if "Photo" in dataframe.columns else ""
-                if "Photo" in dataframe.columns:
-                    dataframe.loc[row_index, "Photo"] = photo_filename
-                if old_photo and old_photo != photo_filename:
-                    old_path = get_existing_photo_path(course, batch, old_photo)
-                    if os.path.isfile(old_path):
-                        os.remove(old_path)
-                result["photos"] += 1
-                add_import_group_count(result, course_group, batch, "photos")
-                write_log(f"Photo downloaded | {regno}")
-            except Exception as error:
-                result.setdefault("photo_warnings", []).append({
-                    "regno": regno,
-                    "reason": "Photo download failed"
-                })
-                app.logger.warning("Google Drive photo failed for %s: %s", regno, error)
-                write_log(f"Photo warning | {regno} | Photo download failed")
-                photo_failed = True
+            batch = row["Batch"].replace("-", "_")
+            csv_path, _photo_folder = existing_batch_paths(course_group, batch)
+            dataframe = load_csv(course_group, batch)
+            if dataframe is None or "RegNo" not in dataframe.columns:
+                raise ValueError("Target batch CSV could not be loaded")
 
-        save_csv(dataframe, course_group, batch)
-        if is_new:
-            result["new"] += 1
-            add_import_group_count(result, course_group, batch, "new")
-            write_log(f"New student from Google Form | {regno}")
-            add_import_record(
-                result, row, "NEW",
-                "Imported; photo download failed" if photo_failed else "Imported",
-                "Warning" if photo_failed else ("Downloaded" if row.get("Photo") else "Not provided")
+            if not backup_created:
+                create_backup("Automatic Backup Before Google Form Import")
+                backup_created = True
+
+            matches = dataframe[dataframe["RegNo"].astype(str).str.strip() == regno].index
+            is_new = len(matches) == 0
+            if is_new:
+                row_index = max(dataframe.index, default=-1) + 1
+                dataframe.loc[row_index] = {column: "" for column in dataframe.columns}
+            else:
+                row_index = matches[0]
+
+            for field in GOOGLE_FORM_FIELDS:
+                if field != "Photo" and field in dataframe.columns:
+                    value = row[field]
+                    dataframe.loc[row_index, field] = format_dob_for_csv(value) if field == "DOB" else value
+
+            photo_failed = False
+            if row.get("Photo"):
+                try:
+                    photo_file_id = google_drive_file_id(row["Photo"])
+                    manifest_key = google_photo_manifest_key(course_group, batch, regno)
+                    photo_filename = f"{secure_filename(regno)}.jpg"
+                    photo_path = get_photo_path(course_group, batch, photo_filename)
+                    if (photo_manifest.get(manifest_key) != photo_file_id
+                            or not os.path.isfile(photo_path)):
+                        photo_filename = download_google_photo(
+                            drive_service, row["Photo"], course_group, batch, regno
+                        )
+                        photo_manifest[manifest_key] = photo_file_id
+                        save_google_photo_manifest(photo_manifest)
+                    old_photo = str(dataframe.loc[row_index, "Photo"]).strip() if "Photo" in dataframe.columns else ""
+                    if "Photo" in dataframe.columns:
+                        dataframe.loc[row_index, "Photo"] = photo_filename
+                    if old_photo and old_photo != photo_filename:
+                        old_path = get_existing_photo_path(course_group, batch, old_photo)
+                        if os.path.isfile(old_path):
+                            os.remove(old_path)
+                    result["photos"] += 1
+                    add_import_group_count(result, course_group, batch, "photos")
+                    write_log(f"Photo downloaded | {regno}")
+                except Exception as error:
+                    result.setdefault("photo_warnings", []).append({
+                        "regno": regno,
+                        "reason": "Photo download failed",
+                        "debug": google_import_error_context(error, "Google Form photo step")
+                    })
+                    app.logger.warning("Google Drive photo failed for %s: %s", regno, error)
+                    write_log(f"Photo warning | {regno} | Photo download failed | {type(error).__name__} | {error}")
+                    photo_failed = True
+
+            save_csv(dataframe, course_group, batch)
+            if is_new:
+                result["new"] += 1
+                add_import_group_count(result, course_group, batch, "new")
+                write_log(f"New student from Google Form | {regno}")
+                add_import_record(
+                    result, row, "NEW",
+                    "Imported; photo download failed" if photo_failed else "Imported",
+                    "Warning" if photo_failed else ("Downloaded" if row.get("Photo") else "Not provided")
+                )
+            else:
+                result["updated"] += 1
+                add_import_group_count(result, course_group, batch, "updated")
+                write_log(f"Existing student updated from Google Form | {regno}")
+                add_import_record(
+                    result, row, "UPDATED",
+                    "Updated; photo download failed" if photo_failed else "Updated",
+                    "Warning" if photo_failed else ("Downloaded" if row.get("Photo") else "Not provided")
+                )
+            if not photo_failed:
+                imported_ids.add(import_id)
+        except Exception as error:
+            details = google_import_error_context(error, "Google Form row processing")
+            result["failed"] += 1
+            add_import_group_count(result, course_group, batch, "failed")
+            result["errors"].append({
+                "regno": regno,
+                "reason": details["safe_reason"],
+                "debug": details,
+            })
+            app.logger.exception("Google Form row failed for %s", regno)
+            write_log(
+                f"Google Form row failed | {regno} | {details['category']} | "
+                f"{details['exception_type']} | {details['message']}"
             )
-        else:
-            result["updated"] += 1
-            add_import_group_count(result, course_group, batch, "updated")
-            write_log(f"Existing student updated from Google Form | {regno}")
-            add_import_record(
-                result, row, "UPDATED",
-                "Updated; photo download failed" if photo_failed else "Updated",
-                "Warning" if photo_failed else ("Downloaded" if row.get("Photo") else "Not provided")
-            )
-        # Keep a local audit trail. Repeated imports still merge by Course,
-        # Batch, and RegNo so the row is updated rather than duplicated.
-        if not photo_failed:
-            imported_ids.add(import_id)
+            continue
 
     save_google_import_log(imported_ids)
     return result
@@ -2515,18 +2598,24 @@ def import_google_responses_route():
             f"Failed: {result['failed']}"
         )
     except Exception as error:
-        app.logger.exception("Google API connection failed")
-        safe_reason = google_safe_error_reason(error)
+        details = google_import_error_context(error, "Google Form import route")
+        app.logger.exception("Google Form import failed: %s", details["message"])
+        safe_reason = details["safe_reason"]
         session["import_result"] = {
             "new": 0, "updated": 0, "photos": 0, "skipped": 0,
             "connection": "FAILED",
             "spreadsheet": "Not connected",
             "failed": 1, "errors": [{
                 "regno": "-",
-                "reason": safe_reason
-            }]
+                "reason": safe_reason,
+                "debug": details
+            }],
+            "debug": details
         }
-        write_log(f"Google Form import failed | {safe_reason}")
+        write_log(
+            f"Google Form import failed | {details['category']} | "
+            f"{details['exception_type']} | {safe_reason} | {details['message']}"
+        )
 
     return redirect(url_for("admin"))
 
