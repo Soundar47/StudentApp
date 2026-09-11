@@ -228,7 +228,8 @@ GOOGLE_FORM_FIELD_MAPPING = {
     "BloodGroup": ("BloodGroup", "Blood Group"),
     "UmisID": ("UmisID", "UMIS ID"), "EmisNo": ("EmisNo", "EMIS No"),
     "EmisID": ("EmisID", "EMIS ID"),
-    "Email": ("Email", "Email Address"), "Photo": ("Photo", "Student Photo")
+    "Email": ("Email", "Email Address"),
+    "Photo": ("Photo", "Student Photo", "Profile Image")
 }
 
 # ==========================================
@@ -826,26 +827,41 @@ def load_csv(course,batch):
 # ==========================================
 
 
-def save_csv(df,course,batch):
+def save_csv(df, course, batch):
+    path = get_csv_path(course, batch)
+    destination_dir = os.path.dirname(path)
 
+    os.makedirs(destination_dir, exist_ok=True)
 
-    path = get_csv_path(
-        course,
-        batch
+    file_descriptor, temporary_path = tempfile.mkstemp(
+        dir=destination_dir,
+        prefix=f".{os.path.basename(path)}.",
+        suffix=".tmp"
     )
 
-
-    temporary_path = path + ".tmp"
     try:
-        df.to_csv(temporary_path, index=False, encoding="utf-8-sig")
-        # Flush the replacement file before publishing it.  os.replace keeps
-        # the previous CSV intact if writing or flushing fails.
-        with open(temporary_path, "rb") as temporary_file:
-            os.fsync(temporary_file.fileno())
+        with os.fdopen(
+            file_descriptor,
+            "w",
+            encoding="utf-8-sig",
+            newline=""
+        ) as temporary_file:
+            file_descriptor = None
+            df.to_csv(temporary_file, index=False)
+            temporary_file.flush()
+
         os.replace(temporary_path, path)
+        temporary_path = None
+
     finally:
-        if os.path.exists(temporary_path):
-            os.remove(temporary_path)
+        if file_descriptor is not None:
+            os.close(file_descriptor)
+
+        if temporary_path and os.path.exists(temporary_path):
+            try:
+                os.remove(temporary_path)
+            except OSError:
+                pass
 
 
 # ==========================================
@@ -1417,7 +1433,8 @@ def download_google_photo(drive_service, photo_value, course, batch, regno):
         except (OSError, UnidentifiedImageError, ValueError) as error:
             raise ValueError("Downloaded photo is not a valid image") from error
 
-        os.replace(temporary_path, destination)
+        shutil.copy2(temporary_path, destination)
+        os.remove(temporary_path)
         temporary_path = None
         return os.path.basename(destination)
     finally:
